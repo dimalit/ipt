@@ -1,124 +1,224 @@
-#include <memory>
-#include <vector>
+#include "sampling_detail.h"
+
 #include <functional>
+#include <cassert>
+#include <algorithm>
+#include <random>
 
-// GLOBAL TODO Use continuous BSDFs + small or even point lights.
-// Approximate light contribution on surface as well as on slope!
+using namespace glm;
 
-struct vec3 {
-    vec3 operator*(float) const {return vec3();}
-};
+// TODO deduplicate
+static struct{
+    std::random_device rdev;
+    std::mt19937 gen = std::mt19937(rdev());
 
-struct mat3{
-    vec3 operator*(vec3 arg) const {return arg;}
-};
+    std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
 
-bool hit(float prob);
-
-struct Narrow;
-
-struct Distribution {
-    // may return 0 if sampling failed
-    // this is used to balance parts of union distribution
-    virtual vec3 sample() const = 0;
-    virtual float pdf( vec3 arg ) const = 0;
-    virtual float integral(const Narrow&) const = 0;
-    float weight;
-};
-
-struct Narrow: public Distribution {
-    vec3 direction; // center
-    // pdf = 1.0f / area;
-};
-
-struct Superposition: public Narrow {
-
-    std::shared_ptr<const Distribution> a;
-    std::shared_ptr<const Narrow> b;
-
-    Superposition(std::shared_ptr<const Distribution> _a, std::shared_ptr<const Narrow> _b)
-        :a(_a), b(_b){
-
-        this->direction = _b->direction;
-        this->weight = a->weight * a->integral(*b.get());
+    float operator()() {
+        return dist(gen);
     }
+} randf;
 
-    virtual vec3 sample() const {
-        vec3 x = b->sample();
-        return x * a->pdf(x);
-    }
-};
+bool p_hit(float prob){
+    return randf() < prob;
+}
 
-struct Sum: public Distribution {
-    std::vector< std::shared_ptr<Distribution> > components;
-    std::vector< float > weights;
-    virtual vec3 sample() const = 0;
-};
+UpperHalf::UpperHalf(){
+    max_pdf = 0.5f/M_PI;
+    weight = 2.0f*M_PI; // simulate as though pdf=1
+}
+vec3 UpperHalf::trySample() const {
+    float u1 = randf();
+    float u2 = randf();
+    float alpha = acos(u1);
+    float phi = 2*M_PI*u2;
+    float r = sin(alpha);
+    return vec3(r*cos(phi), r*sin(phi), u1);
+}
+float UpperHalf::pdf( vec3 arg ) const {
+    // TODO assert length = 1?
+    // TODO function for this like clip()?
+    if(arg.z < 0.0f)
+        return 0.0f;
+    return max_pdf;
+}
 
-std::shared_ptr<Distribution> add(std::shared_ptr<Distribution> a, std::shared_ptr<Distribution> b, float ka){
-    if(!dynamic_cast<Sum*>(a.get()) && dynamic_cast<Sum*>(b.get()))
-        return add(b, a, 1.0f-ka);
-    if(dynamic_cast<Sum*>(a.get())){
-        if(dynamic_cast<Sum*>(b.get())){
+Cosine::Cosine(float w){
+    max_pdf = 1.0f/M_PI;
+    weight = w;
+}
+vec3 Cosine::trySample() const {
+    float u1 = randf();
+    float u2 = randf();
+    float alpha = acos(sqrt(u1));
+    float phi = 2*M_PI*u2;
+    float r = sin(alpha);
+    return vec3(r*cos(phi), r*sin(phi), cos(alpha));
+}
+float Cosine::pdf( vec3 arg ) const {
+    // TODO assert length = 1?
+    // TODO function for this like clip()?
+    if(arg.z < 0.0f)
+        return 0.0f;
+    return 1.0f/M_PI*arg.z;
+}
+
+Superposition::Superposition(std::shared_ptr<const Distribution> _source, std::shared_ptr<const Distribution> _dest) {
+
+    source = std::dynamic_pointer_cast<const DistributionImpl>(_source);
+    dest   = std::dynamic_pointer_cast<const DistributionImpl>(_dest);
+
+    assert(source && dest);
+    assert(source->pdf_integrates_to_one);  // we need source's pdf integral in trySample()
+
+    // TODO compute pdf_multiplier, max_pdf, and set pdf_integrates_to_one using auxialiry lookup-table and functions
+    pdf_multiplier = 1.0f;
+    pdf_integrates_to_one = false;
+    max_pdf = magic_compute_max_pdf(source.get(), dest.get());
+
+    weight = source->weight * dest->weight / pdf_multiplier;
+
+    // total_area = 1 * k;
+    // hit_area = this_area
+    // hit_rate = hit_area / total_area;
+    // adjust result to have result = this_area / 1.0
+    if(!pdf_integrates_to_one){
+        float k = dest->max_pdf * pdf_multiplier;
+        weight *= k;
+    }//if
+}
+
+vec3 Superposition::trySample() const {
+
+    vec3 x = source->trySample();
+    assert(x != vec3());            // should always succeed because source->pdf_integrates_to_one
+
+    // NB should not be both singular
+    if(source->isSingular())
+        return x;
+
+    if(dest->isSingular())
+        return dest->trySample();
+
+    // As we need source*dest*pdf_multiplier <= source*k,
+    // we get k >= dest*pdf_multiplier
+    float k = dest->max_pdf * pdf_multiplier;
+
+    bool hit = p_hit( this->pdf( x ) / (source->pdf( x )*k) );
+
+    // if real weight is not known - just return 1st result
+    if( !pdf_integrates_to_one ){
+        return hit ? x : vec3();
+    }// if
+
+    // if real weight is known - loop until success
+    else while( !hit ){
+        x = source->trySample();
+        hit = p_hit( this->pdf( x ) / (source->pdf( x )*k) );
+    }// else
+
+    assert(false);
+    return vec3();
+}
+
+vec3 Union::trySample() const {
+    vec3 res;
+    do{
+        float r = randf()*weight;
+        float acc = 0.0f;
+        // TODO What's best used here as i?
+        for( const std::shared_ptr<const Distribution>& c: components ){
+            acc += c->weight;
+            if(r<acc)
+                res = c->trySample();
+        }// for
+        assert(false && "Loop should always break insise!");
+    }while(res == vec3());
+    return res;
+}
+
+std::shared_ptr<Distribution> unite(std::shared_ptr<const Distribution> a, std::shared_ptr<const Distribution> b){
+
+    const Union* ua = dynamic_cast<const Union*>(a.get());
+    const Union* ub = dynamic_cast<const Union*>(b.get());
+
+    if(!ua && ub)
+        return unite(b, a);
+    if(ua){
+        if(ub){
             // add 2 arrays
+            std::shared_ptr<Union> res = std::make_shared<Union>(*ua);  // copy
+            std::copy(ub->components.begin(), ub->components.end(), res->components.end());
+            res->weight += b->weight;
+            return res;
         }
         else{
             // add b to array a
+            std::shared_ptr<Union> res = std::make_shared<Union>(*ua);  // copy
+            res->components.push_back(b);
+            res->weight += a->weight;
+            return res;
         }
     }
     else{
-        // add 2 plain distributions
+        // add two simple distributions
+        std::shared_ptr<Union> res = std::make_shared<Union>();
+        res->components.push_back(a);
+        res->components.push_back(b);
+        res->weight = a->weight + b->weight;
+        return res;
     }
 }
 
-std::shared_ptr<Distribution> apply(std::shared_ptr<Distribution> a, std::shared_ptr<Distribution> b){
-    if(!dynamic_cast<Sum*>(a.get()) && dynamic_cast<Sum*>(b.get()))
-        return apply(b, a);
-    if(dynamic_cast<Sum*>(a.get())){
-        if(dynamic_cast<Sum*>(b.get())){
+// NB res and args can be null!
+std::shared_ptr<const Distribution> apply(std::shared_ptr<const Distribution> source, std::shared_ptr<const Distribution> dest){
+
+    if(!source)
+        return dest;
+    if(!dest)
+        return source;
+
+    const Union* u_source = dynamic_cast<const Union*>(source.get());
+    const Union* u_dest = dynamic_cast<const Union*>(dest.get());
+
+    if( u_source ){
+        if( u_dest ){
             // make cross-product
-            // NOTE TODO How to compute cross-measures!?
+            // TODO do this algorithm nicer?!
+            std::shared_ptr<const Distribution> res = std::make_shared<Union>();
+            for( std::shared_ptr<const Distribution> c: u_source->components ){
+                std::shared_ptr<const Distribution> sup = apply(c, dest);
+                res = unite(res, sup);
+            }// for
+            return res;
         }
         else{
             // apply b to every a
+            std::shared_ptr<Union> res = std::make_shared<Union>();
+            for( std::shared_ptr<const Distribution> c: u_source->components ){
+                std::shared_ptr<Superposition> sup = std::make_shared<Superposition>(c, dest);
+                res->components.push_back( sup );
+                res->weight += sup->weight;
+            }// for
+            return res;
         }
+    }
+    else if( u_dest ){
+        // apply a to every b
+        std::shared_ptr<Union> res = std::make_shared<Union>();
+        for( std::shared_ptr<const Distribution> c: u_dest->components ){
+            std::shared_ptr<Superposition> sup = std::make_shared<Superposition>(source, c);
+            res->components.push_back( sup );
+            res->weight += sup->weight;
+        }// for
+        return res;
     }
     else{
-        // apply plain to plain
+        std::shared_ptr<Distribution> res = std::make_shared<Superposition>(source, dest);
+        if(res->weight == 0.0f)
+            return nullptr;
+        return res;
     }
 }
-
-struct Clip: public Continuous {
-    std::shared_ptr<Continuous> origin;
-    std::function<bool(vec3)> predicate;
-    virtual vec3 sample() const {
-        for(;;){
-            vec3 x = origin->sample();
-            if(predicate(x))
-                return x;
-        }
-    }
-    // TODO it will be not 1-normalized!!
-    virtual float pdf(vec3 x) const {
-        return origin->pdf(x);
-    }
-};
-
-struct Transform: public Distribution {
-    std::shared_ptr<Distribution> origin;
-    mat3 transormation;
-    virtual vec3 sample() const {
-        vec3 x = origin->sample();
-        return transormation * x;
-    }
-    // TODO Need separate implementations for Continuous and Singular
-};
-
-struct Rotate: public Distribution {
-    std::shared_ptr<Transform> origin;
-    Rotate(vec3 /*to*/){
-        // set original transformation correctly
-    }
-};
 
 // TODO Add free functions with dynamic_cast for classes above!
