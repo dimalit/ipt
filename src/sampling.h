@@ -15,7 +15,6 @@ struct Distribution {
     // this is used to balance parts of union distribution
     virtual glm::vec3 trySample() const = 0;
 
-    // used in parts of union distribution
     float weight = 1.0f;
 
 };
@@ -28,8 +27,6 @@ struct DistributionImpl: public Distribution {
     // used in sampling
     // is infinity if singular
     float max_pdf;
-
-    bool pdf_integrates_to_one = true;
 
     bool isSingular() const {
         return max_pdf == std::numeric_limits<float>::infinity();

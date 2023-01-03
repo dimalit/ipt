@@ -69,23 +69,19 @@ Superposition::Superposition(std::shared_ptr<const Distribution> _source, std::s
     dest   = std::dynamic_pointer_cast<const DistributionImpl>(_dest);
 
     assert(source && dest);
-    assert(source->pdf_integrates_to_one);  // we need source's pdf integral in trySample()
+    // We cannot apply Superposition recursively!
+    // We need source's pdf integral in trySample()
+    assert(dynamic_cast<const Superposition*>(_source.get()) == nullptr);
 
-    // TODO compute pdf_multiplier, max_pdf, and set pdf_integrates_to_one using auxialiry lookup-table and functions
-    pdf_multiplier = 1.0f;
-    pdf_integrates_to_one = false;
     max_pdf = magic_compute_max_pdf(source.get(), dest.get());
 
-    weight = source->weight * dest->weight / pdf_multiplier;
+    weight = source->weight * dest->weight;
 
-    // total_area = 1 * k;
+    // total_area = 1 * k; (k=max_pdf)
     // hit_area = this_area
     // hit_rate = hit_area / total_area;
     // adjust result to have result = this_area / 1.0
-    if(!pdf_integrates_to_one){
-        float k = dest->max_pdf * pdf_multiplier;
-        weight *= k;
-    }//if
+    weight *= dest->max_pdf;
 }
 
 vec3 Superposition::trySample() const {
@@ -100,25 +96,13 @@ vec3 Superposition::trySample() const {
     if(dest->isSingular())
         return dest->trySample();
 
-    // As we need source*dest*pdf_multiplier <= source*k,
-    // we get k >= dest*pdf_multiplier
-    float k = dest->max_pdf * pdf_multiplier;
+    // As we need source*dest <= source*k,
+    // we get k >= dest
+    float k = dest->max_pdf;
 
     bool hit = p_hit( this->pdf( x ) / (source->pdf( x )*k) );
 
-    // if real weight is not known - just return 1st result
-    if( !pdf_integrates_to_one ){
-        return hit ? x : vec3();
-    }// if
-
-    // if real weight is known - loop until success
-    else while( !hit ){
-        x = source->trySample();
-        hit = p_hit( this->pdf( x ) / (source->pdf( x )*k) );
-    }// else
-
-    assert(false);
-    return vec3();
+    return hit ? x : vec3();
 }
 
 vec3 Union::trySample() const {

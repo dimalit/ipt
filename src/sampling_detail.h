@@ -9,9 +9,6 @@ class Superposition: public DistributionImpl {
 
 private:
     std::shared_ptr<const DistributionImpl> source, dest;
-    float pdf_multiplier;           // scaling coefficient over source->pdf()*dest->pdf() to be 1-normed
-                                    // can be infinity if resultant pdf is zero
-
     static float magic_compute_max_pdf(const DistributionImpl* source, const DistributionImpl* dest);
 
 public:
@@ -19,7 +16,7 @@ public:
     Superposition(std::shared_ptr<const Distribution> _source, std::shared_ptr<const Distribution> _dest);
 
     virtual float pdf( glm::vec3 x ) const override {
-        return source->pdf(x) * dest->pdf(x) * pdf_multiplier;
+        return source->pdf(x) * dest->pdf(x);
     }
 
     virtual glm::vec3 trySample() const override;
