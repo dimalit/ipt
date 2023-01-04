@@ -9,33 +9,33 @@
 
 #include "sampling_fwd.h"
 
-struct Distribution {
+struct Ddf {
 
     // may return 0 if sampling failed
     // this is used to balance parts of union distribution
     virtual glm::vec3 trySample() const = 0;
 
-    float weight = 1.0f;
+    float full_theoretical_weight = 1.0f;
 
 };
 
-struct DistributionImpl: public Distribution {
+struct DdfImpl: public Ddf {
 
     // will return NaN if singular
-    virtual float pdf( glm::vec3 arg ) const = 0;
+    virtual float value( glm::vec3 arg ) const = 0;
 
     // used in sampling
     // is infinity if singular
-    float max_pdf;
+    float max_value;
 
     bool isSingular() const {
-        return max_pdf == std::numeric_limits<float>::infinity();
+        return max_value == std::numeric_limits<float>::infinity();
     }
 };
 
 // TODO hide t from interface?
-struct Transform: public Distribution {
-    std::shared_ptr<const Distribution> origin;
+struct TransformDdf: public Ddf {
+    std::shared_ptr<const Ddf> origin;
     glm::mat3 transformation;
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
@@ -45,8 +45,8 @@ struct Transform: public Distribution {
 };
 
 // TODO bad idea to inherit implementation!
-struct Rotate: public Transform {
-    Rotate(glm::vec3 to){
+struct RotateDdf: public TransformDdf {
+    RotateDdf(glm::vec3 to){
         glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis = cross(z, to);
         float angle = dot(z,to);
@@ -54,34 +54,34 @@ struct Rotate: public Transform {
     }
 };
 
-struct UpperHalf: public DistributionImpl {
-    UpperHalf();
+struct UpperHalfDdf: public DdfImpl {
+    UpperHalfDdf();
     virtual glm::vec3 trySample() const override;
-    virtual float pdf( glm::vec3 arg ) const override;
+    virtual float value( glm::vec3 arg ) const override;
 };
 
-class Cosine: public DistributionImpl {
+class CosineDdf: public DdfImpl {
 public:
-    Cosine(float w);
+    CosineDdf(float w);
     virtual glm::vec3 trySample() const override;
-    virtual float pdf( glm::vec3 arg ) const override;
+    virtual float value( glm::vec3 arg ) const override;
 };
 
-class Mirrorly: public DistributionImpl {
+class MirrorDdf: public DdfImpl {
 public:
-    Mirrorly(float w){
-        max_pdf = std::numeric_limits<float>::infinity();
-        weight = w;
+    MirrorDdf(float w){
+        max_value = std::numeric_limits<float>::infinity();
+        full_theoretical_weight = w;
     }
     virtual glm::vec3 trySample() const override {
         return glm::vec3(0.0f, 0.0f, 1.0f);
     }
-    virtual float pdf( glm::vec3 arg ) const override {
+    virtual float value( glm::vec3 arg ) const override {
         return std::numeric_limits<float>::quiet_NaN();
     }
 };
 
-extern std::shared_ptr<Distribution> unite(std::shared_ptr<const Distribution> a, std::shared_ptr<const Distribution> b);
-extern std::shared_ptr<const Distribution> apply(std::shared_ptr<const Distribution> source, std::shared_ptr<const Distribution> dest);
+extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const Ddf> b);
+extern std::shared_ptr<const Ddf> apply(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest);
 
 #endif // SAMPLING_H

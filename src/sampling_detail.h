@@ -5,26 +5,26 @@
 
 #include <vector>
 
-class Superposition: public DistributionImpl {
+class SuperpositionDdf: public DdfImpl {
 
 private:
-    std::shared_ptr<const DistributionImpl> source, dest;
-    static float magic_compute_max_pdf(const DistributionImpl* source, const DistributionImpl* dest);
+    std::shared_ptr<const DdfImpl> source, dest;
+    static float magic_compute_max_pdf(const DdfImpl* source, const DdfImpl* dest);
 
 public:
 
-    Superposition(std::shared_ptr<const Distribution> _source, std::shared_ptr<const Distribution> _dest);
+    SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest);
 
-    virtual float pdf( glm::vec3 x ) const override {
-        return source->pdf(x) * dest->pdf(x);
+    virtual float value( glm::vec3 x ) const override {
+        return source->value(x) * dest->value(x);
     }
 
     virtual glm::vec3 trySample() const override;
 };
 
 // TODO Indicate somehow that trySample should always succeed!
-struct Union: public Distribution {
-    std::vector< std::shared_ptr<const Distribution> > components;
+struct UnionDdf: public Ddf {
+    std::vector< std::shared_ptr<const Ddf> > components;
     // weight eqals to sum of weights
     virtual glm::vec3 trySample() const override;
 };

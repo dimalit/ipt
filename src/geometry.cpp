@@ -37,7 +37,6 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
     }
 
     surface_intersection res;
-    res.eye_ray = direction;
     res.position = origin + direction * dist;
 
     if(intersected_plane >= 0){
@@ -46,9 +45,9 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         // material
         vec3 normal = -planes[intersected_plane];   // inside
 
-        shared_ptr<const Distribution> dis = make_shared<const Cosine>(1.0f);
+        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>(1.0f);
 
-        shared_ptr<Rotate> rotate = make_shared<Rotate>(normal);
+        shared_ptr<RotateDdf> rotate = make_shared<RotateDdf>(normal);
         rotate->origin = dis;
         res.sdf = rotate;
     }
@@ -60,18 +59,18 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         vec3 reflection = reflect(direction, normal);
         float eye_angle_cos = dot(-direction, normal);
 
-        shared_ptr<const Distribution> diffuse = make_shared<const Cosine>(0.8f*eye_angle_cos);
-        shared_ptr<const Distribution> specular = make_shared<const Mirrorly>(0.2f);
+        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>(0.8f*eye_angle_cos);
+        shared_ptr<const Ddf> specular = make_shared<const MirrorDdf>(0.2f);
 
-        shared_ptr<Rotate> rotate_diffuse = make_shared<Rotate>(normal);
+        shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(normal);
         rotate_diffuse->origin = diffuse;
 
-        shared_ptr<Rotate> rotate_specular = make_shared<Rotate>(reflection);
+        shared_ptr<RotateDdf> rotate_specular = make_shared<RotateDdf>(reflection);
         rotate_specular->origin = specular;
-        shared_ptr<Rotate> rotate_cap = make_shared<Rotate>(normal);
-        rotate_cap->origin = make_shared<UpperHalf>();
+        shared_ptr<RotateDdf> rotate_cap = make_shared<RotateDdf>(normal);
+        rotate_cap->origin = make_shared<UpperHalfDdf>();
 
-        shared_ptr<const Distribution> dist = unite(rotate_diffuse, apply(rotate_specular, rotate_cap));
+        shared_ptr<const Ddf> dist = unite(rotate_diffuse, apply(rotate_specular, rotate_cap));
 
         res.sdf = dist;
     }

@@ -19,7 +19,7 @@ static struct{
     }
 } randf;
 
-class LightToDistribution: public DistributionImpl {
+class LightToDistribution: public DdfImpl {
     // TODO Think about this
     friend class Superposition;
 private:
@@ -27,20 +27,17 @@ private:
     glm::vec3 origin;
 public:
     LightToDistribution(std::shared_ptr<const LightImpl> light, glm::vec3 origin) {
-        this->weight = light->weight / pow((light->position-origin).length(), 2);
+        // TODO this is rough estimation, but for relatively small lights will work
+        this->full_theoretical_weight = light->power / pow((light->position-origin).length(), 2);
         this->light = light;
         this->origin = origin;
     }
     virtual glm::vec3 trySample() const override;
-    virtual float pdf( glm::vec3 direction ) const override;
+    virtual float value( glm::vec3 direction ) const override;
 };
 
-std::shared_ptr<const Distribution> Light::lightToPoint(glm::vec3 pos) const {
-    return std::make_shared<const LightToDistribution>(this, pos);
-}
-
 glm::vec3 LightToDistribution::trySample() const {
-    std::optional<light_intersection> inter = light->trySample();
+    std::optional<light_intersection> inter = light->sample();
     if(!inter.has_value())            // if failed
         return glm::vec3();
     glm::vec3 dir = glm::normalize(inter->position-origin);
@@ -50,7 +47,7 @@ glm::vec3 LightToDistribution::trySample() const {
     return randf() <= cosinus ? dir : vec3();
 }
 
-float LightToDistribution::pdf( glm::vec3 direction ) const {
+float LightToDistribution::value( glm::vec3 direction ) const {
     std::optional<light_intersection> inter = light->traceRay(origin, direction);
     if(!inter.has_value())
         return 0.0f;
@@ -60,14 +57,20 @@ float LightToDistribution::pdf( glm::vec3 direction ) const {
     return cosinus;
 }
 
-AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float w, type_t type){
+std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
+    return std::make_shared<const LightToDistribution>(this, pos);
+}
+
+AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){
     this->position = origin;
     this->x_axis = x_axis;
     this->y_axis = y_axis;
-    this->weight = w;
+    this->power = power;
     this->type = type;
+    float full_area = cross(x_axis, y_axis).length();
+    area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
 }
-std::optional<light_intersection> AreaLight::trySample() const {
+std::optional<light_intersection> AreaLight::sample() const {
     float u1 = randf();
     float u2 = randf() * (type==TYPE_TRIANLE ? 1.0f-u1 : 1.0f );
     vec3 pos = x_axis*u1 + y_axis*u2;
@@ -126,7 +129,7 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
     return res;
 }
 
-optional<light_intersection> SphereLight::trySample() const {
+optional<light_intersection> SphereLight::sample() const {
 
     float u1 = randf()*2.0f - 1.0f;     // -1..+1
     float u2 = randf();
