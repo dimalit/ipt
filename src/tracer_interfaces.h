@@ -35,9 +35,9 @@ struct Camera {
 };
 
 struct Scene{
-    std::shared_ptr<Geometry> geometry;
-    std::shared_ptr<Lighting> lighting;
-    std::shared_ptr<Camera> camera;
+    std::shared_ptr<const Geometry> geometry;
+    std::shared_ptr<const Lighting> lighting;
+    std::shared_ptr<const Camera> camera;
 };
 
 struct RenderPlane {

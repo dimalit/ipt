@@ -7,4 +7,8 @@ struct SphereInBox: public Geometry {
     virtual std::optional<surface_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
 };
 
+struct Floor: public Geometry {
+    virtual std::optional<surface_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
+};
+
 #endif // GEOMETRY_H
