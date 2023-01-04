@@ -19,8 +19,49 @@ static struct{
     }
 } randf;
 
+class LightToDistribution: public DistributionImpl {
+    // TODO Think about this
+    friend class Superposition;
+private:
+    std::shared_ptr<const LightImpl> light;
+    glm::vec3 origin;
+public:
+    LightToDistribution(std::shared_ptr<const LightImpl> light, glm::vec3 origin) {
+        this->weight = light->weight / pow((light->position-origin).length(), 2);
+        this->light = light;
+        this->origin = origin;
+    }
+    virtual glm::vec3 trySample() const override;
+    virtual float pdf( glm::vec3 direction ) const override;
+};
+
+std::shared_ptr<const Distribution> Light::lightToPoint(glm::vec3 pos) const {
+    return std::make_shared<const LightToDistribution>(this, pos);
+}
+
+glm::vec3 LightToDistribution::trySample() const {
+    std::optional<light_intersection> inter = light->trySample();
+    if(!inter.has_value())            // if failed
+        return glm::vec3();
+    glm::vec3 dir = glm::normalize(inter->position-origin);
+    float cosinus = dot(inter->normal, -dir);
+    if(cosinus <= 0.0f)               // if facing back
+        return glm::vec3();
+    return randf() <= cosinus ? dir : vec3();
+}
+
+float LightToDistribution::pdf( glm::vec3 direction ) const {
+    std::optional<light_intersection> inter = light->traceRay(origin, direction);
+    if(!inter.has_value())
+        return 0.0f;
+    glm::vec3 dir = glm::normalize(inter->position-origin);
+    float cosinus = dot(inter->normal, -dir);
+    assert(cosinus >= 0.0f);
+    return cosinus;
+}
+
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float w, type_t type){
-    this->origin = origin;
+    this->position = origin;
     this->x_axis = x_axis;
     this->y_axis = y_axis;
     this->weight = w;
@@ -33,7 +74,7 @@ std::optional<light_intersection> AreaLight::trySample() const {
 
     light_intersection res;
     res.position = pos;
-    res.radiation = weight / area();
+    res.normal = normalize(cross(x_axis, y_axis));
 
     return res;
 }
@@ -46,7 +87,7 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     float n_dir = dot(n, direction);
     if(n_dir < 1e-6)
         return {};
-    float t = dot(n, this->origin-origin) / n_dir;
+    float t = dot(n, this->position-origin) / n_dir;
     if(t<0.0f)
         return {};
     vec3 pos = origin + direction*t;
@@ -67,9 +108,8 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
         return {};
 
     light_intersection res;
-    res.eye_ray = direction;
     res.position = pos;
-    res.radiation = weight / area();
+    res.normal = normalize(cross(x_axis, y_axis));
 
     return res;
 }
@@ -80,12 +120,8 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
         return {};
 
     light_intersection res;
-    res.eye_ray = direction;
     res.position = origin + direction*t;
-
-    vec3 normal = normalize(res.position - this->origin);
-    float cosinus = dot(normal, -direction);
-    res.radiation = weight / 4.0 / M_PI * cosinus;
+    res.normal = normalize(res.position - this->position);
 
     return res;
 }
@@ -99,10 +135,9 @@ optional<light_intersection> SphereLight::trySample() const {
     float r = sin(alpha);
     vec3 pos(r*cos(phi), r*sin(phi), u1);
 
-    // TODO no direction information here!
     light_intersection res;
     res.position = pos;
-    res.radiation = weight / 4.0 / M_PI;    // no cosinus!
+    res.normal = normalize(res.position - this->position);
 
     return res;
 }

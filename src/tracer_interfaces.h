@@ -10,16 +10,16 @@
 
 struct intersection {
     glm::vec3 position;
-    glm::vec3 eye_ray;
+    glm::vec3 normal;
 };
 
 struct surface_intersection: public intersection {
+    glm::vec3 eye_ray;
     float curvature;		// my addition
     std::shared_ptr<const Distribution> sdf;
 };
 
 struct light_intersection: public intersection {
-    float radiation;
 };
 
 struct Geometry {
@@ -27,7 +27,7 @@ struct Geometry {
 };
 
 struct Lighting {
-    std::shared_ptr<const Distribution> spatial_distribution;
+    virtual std::shared_ptr<const Distribution> distributionInPoint(glm::vec3 pos) const = 0;
     virtual std::optional<light_intersection> traceRayToLight(glm::vec3 origin, glm::vec3 direction) const = 0;
 };
 

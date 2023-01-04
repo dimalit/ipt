@@ -77,17 +77,18 @@ Superposition::Superposition(std::shared_ptr<const Distribution> _source, std::s
 
     weight = source->weight * dest->weight;
 
-    // total_area = 1 * k; (k=max_pdf)
+    // total_area = source_integral * k; (k=dest->max_pdf)
     // hit_area = this_area
     // hit_rate = hit_area / total_area;
     // adjust result to have result = this_area / 1.0
-    weight *= dest->max_pdf;
+    weight *= dest->max_pdf;    // and mult by source_integal, but this is implicit
 }
 
 vec3 Superposition::trySample() const {
 
     vec3 x = source->trySample();
-    assert(x != vec3());            // should always succeed because source->pdf_integrates_to_one
+    if(x == vec3())         // fail if fail
+        return x;
 
     // NB should not be both singular
     if(source->isSingular())

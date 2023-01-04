@@ -17,7 +17,7 @@ float Superposition::magic_compute_max_pdf(const DistributionImpl* source, const
     vec3 origin = l2d->origin;
 
     if(dynamic_cast<const PointLight*>(light)){
-        vec3 dir = normalize(light->origin - origin);
+        vec3 dir = normalize(light->position - origin);
         return dest->pdf(dir);
     }// PointLight
     else if(dynamic_cast<const SphereLight*>(light)){
@@ -26,10 +26,10 @@ float Superposition::magic_compute_max_pdf(const DistributionImpl* source, const
         if(center_intersection.has_value())
             return source->pdf(center_dir) * dest->pdf(center_dir);
         // else find closest to the center
-        vec3 dir = normalize(light->origin - origin);
+        vec3 dir = normalize(light->position - origin);
         vec3 side = normalize(cross(dir, center_dir));
         vec3 vec_to_center = cross(dir, side);
-        vec3 dir_to_max = normalize(light->origin + vec_to_center * s_light->radius - origin);
+        vec3 dir_to_max = normalize(light->position + vec_to_center * s_light->radius - origin);
         return source->pdf(dir_to_max) * dest->pdf(dir_to_max);
     }// SphereLight
     else if(dynamic_cast<const AreaLight*>(light)){
@@ -38,10 +38,10 @@ float Superposition::magic_compute_max_pdf(const DistributionImpl* source, const
         if(center_intersection.has_value())
             return source->pdf(center_dir) * dest->pdf(center_dir);
         // else find closest to the center
-        vec3 v1 = a_light->origin;
-        vec3 v2 = a_light->origin + a_light->x_axis;
-        vec3 v3 = a_light->origin + a_light->y_axis;
-        vec3 v4 = a_light->type==AreaLight::TYPE_TRIANLE ? vec3() : a_light->origin + a_light->x_axis + a_light->y_axis;
+        vec3 v1 = a_light->position;
+        vec3 v2 = a_light->position + a_light->x_axis;
+        vec3 v3 = a_light->position + a_light->y_axis;
+        vec3 v4 = a_light->type==AreaLight::TYPE_TRIANLE ? vec3() : a_light->position + a_light->x_axis + a_light->y_axis;
 
         float pdf, max_pdf = 0.0f;
 

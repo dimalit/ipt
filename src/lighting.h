@@ -7,39 +7,16 @@
 
 struct Light {
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const = 0;
-    virtual std::optional<light_intersection> trySample() const = 0;
+    virtual std::shared_ptr<const Distribution> lightToPoint(glm::vec3 pos) const;
     float weight;
-    glm::vec3 origin;
+    glm::vec3 position;
 };
 
-class LightToDistribution: public DistributionImpl {
-    // TODO Think about this
-    friend class Superposition;
-private:
-    std::shared_ptr<const Light> light;
-    glm::vec3 origin;
-public:
-    LightToDistribution(std::shared_ptr<const Light> light, glm::vec3 origin) {
-        this->weight = light->weight;
-        this->light = light;
-        this->origin = origin;
-    }
-    virtual glm::vec3 trySample() const override {
-        std::optional<light_intersection> inter = light->trySample();
-        if(!inter.has_value())            // if failed
-            return glm::vec3();
-        glm::vec3 dir = glm::normalize(inter->position-origin);
-        return dir;
-    }
-    virtual float pdf( glm::vec3 direction ) const {
-        std::optional<light_intersection> inter = light->traceRay(origin, direction);
-        if(!inter.has_value())
-            return 0.0f;
-        return inter->radiation / pow((light->origin-origin).length(), 2);
-    }
+struct LightImpl: public Light {
+    virtual std::optional<light_intersection> trySample() const = 0;
 };
 
-class AreaLight: public Light {
+class AreaLight: public LightImpl {
     // TODO Think about this
     friend class Superposition;
 public:
@@ -58,10 +35,10 @@ public:
     virtual std::optional<light_intersection> trySample() const override;
 };
 
-class PointLight:public Light {
+class PointLight:public LightImpl {
 public:
     PointLight(glm::vec3 origin, float weight){
-        this->origin = origin;
+        this->position = origin;
         this->weight = weight;
     }
 
@@ -71,16 +48,15 @@ public:
 
     virtual std::optional<light_intersection> trySample() const override {
         light_intersection res;
-        res.position = this->origin;
-        res.radiation = weight;
+        res.position = this->position;
         return res;
     }
 };
 
-struct SphereLight: public Light {
+struct SphereLight: public LightImpl {
     float radius;
     SphereLight(glm::vec3 origin, float weight, float radius){
-        this->origin = origin;
+        this->position = origin;
         this->weight = weight;
         this->radius = radius;
     }
