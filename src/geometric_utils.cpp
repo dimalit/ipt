@@ -41,7 +41,7 @@ float intersection_with_sphere(float radius, vec3 origin, vec3 direction){
 // TODO Probably not needed
 float rays_distance(vec3 o1, vec3 d1, vec3 o2, vec3 d2){
     vec3 crs = cross(d1, d2);
-    return abs(dot(o2-o1, crs)) / crs.length();
+    return abs(dot(o2-o1, crs)) / length(crs);
 }
 
 vec3 ray2_closest_point(vec3 o1, vec3 d1, vec3 o2, vec3 d2){

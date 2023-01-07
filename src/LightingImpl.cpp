@@ -18,7 +18,7 @@ optional<light_intersection> LightingImpl::traceRayToLight(glm::vec3 origin, glm
         optional<light_intersection> e = l->traceRay(origin, direction);
         if(!e.has_value())
             continue;
-        if(!res.has_value() || (res->position-origin).length() > (e->position-origin).length())
+        if(!res.has_value() || length(res->position-origin) > length(e->position-origin))
             res = e;
     }
 

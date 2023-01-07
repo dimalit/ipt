@@ -31,7 +31,7 @@ private:
 public:
     LightToDistribution(const LightImpl* light, glm::vec3 origin) {
         // TODO this is rough estimation, but for relatively small lights will work
-        this->full_theoretical_weight = light->power / pow((light->position-origin).length(), 2);
+        this->full_theoretical_weight = light->power / pow(length(light->position-origin), 2);
         this->light = light;
         this->origin = origin;
     }
@@ -72,7 +72,7 @@ AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t 
     this->y_axis = y_axis;
     this->power = power;
     this->type = type;
-    float full_area = cross(x_axis, y_axis).length();
+    float full_area = length(cross(x_axis, y_axis));
     area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
 }
 std::optional<light_intersection> AreaLight::sample() const {
@@ -102,12 +102,12 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
         return {};
 
     float t = dot(n, this->position-origin) / n_dir;
-    if(t<0.0f)
+    if(t<1e-6)
         return {};
     vec3 pos = origin + direction*t;
 
-    float cx = dot(x_axis, pos-origin);
-    float cy = dot(y_axis, pos-origin);
+    float cx = dot(normalize(x_axis), pos-this->position) / length(x_axis);
+    float cy = dot(normalize(y_axis), pos-this->position) / length(y_axis);
 
     bool hit = false;
     if(type == TYPE_DIAMOND)

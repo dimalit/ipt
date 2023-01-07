@@ -97,7 +97,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             // light is our 1st priority!
             if(li.has_value()){
                 // if not obscured by geometry
-                if(!si.has_value() || (si->position-origin).length() > (li->position-origin).length()){
+                if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
                     float value = dot(li->normal, -direction)*li->surface_power;
                     r_plane.addRay(x, y, value*dimming_coef);
                     break;
@@ -139,8 +139,8 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 1.0f));
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.88f}, 1.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 25.0f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.88f}, 25.0f, 0.1f));
     // radiates down
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.9f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward
