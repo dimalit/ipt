@@ -9,7 +9,7 @@ using namespace std;
 
 std::optional<surface_intersection> Floor::traceRay(vec3 origin, vec3 direction) const {
     float t = intersection_with_box_plane({0,0,-1}, origin, direction);
-    if(t==std::numeric_limits<float>::infinity())
+    if(t==std::numeric_limits<float>::infinity() || t<0.0f || abs(t)<1e-6)
         return {};
 
     surface_intersection res;
@@ -37,7 +37,7 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
 
     for(size_t i = 0; i<6; ++i){
         float t = intersection_with_box_plane(planes[i], origin, direction);
-        if(t>0.0f && t<dist){
+        if(t>1e-6 && t<dist){
             dist = t;
             intersected_plane = i;
         }

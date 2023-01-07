@@ -130,7 +130,7 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
 }
 
 optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 direction) const {
-    float t = intersection_with_sphere(radius, origin, direction);
+    float t = intersection_with_sphere(radius, origin-this->position, direction);
     if(t == std::numeric_limits<float>::infinity())
         return {};
 

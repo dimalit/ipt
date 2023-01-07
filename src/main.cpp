@@ -139,16 +139,16 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, 0.0f}, 1.0f));
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, 0.0f}, 1.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 1.0f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.88f}, 1.0f, 0.1f));
     // radiates down
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, 0.0f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.9f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f,     -0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.88-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
-    vec3 camera_dir = normalize(vec3(0.0f, 0.0f, -1.0f)-camera_pos)*2.0f;
+    vec3 camera_dir = normalize(vec3(0.0f, 0.0f, -1.0f)-camera_pos);
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
 
     Scene scene{std::shared_ptr<const Geometry>(geometry), std::shared_ptr<const Lighting>(lighting), std::shared_ptr<const Camera>(camera)};
