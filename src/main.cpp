@@ -24,6 +24,9 @@ struct GridRenderPlane: public RenderPlane {
         pixel_counters.resize(width*height);
     }
     virtual void addRay(float x, float y, float value) override {
+        assert(x >= 0.0f && x < 1.0f);
+        assert(y >= 0.0f && y < 1.0f);
+
         size_t xi = x*width;
         size_t yi = height-y*height-1;
         pixels[yi*width+xi] =
@@ -109,7 +112,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             // geometry hit
 
             // DEBUG Draw geometry slightly to understand what is where
-            r_plane.addRay(x, y, 0.01);
+            //r_plane.addRay(x, y, 0.01);
 
             vec3 new_direction = si->sdf->trySample();
 
@@ -138,12 +141,14 @@ int main(){
     LightingImpl* lighting = new LightingImpl();
     lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, 0.0f}, 1.0f));
     lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, 0.0f}, 1.0f, 0.1f));
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f,-0.1f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f,      0.0f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    // radiates down
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, 0.0f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    // radiates forward
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f,     -0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
-    vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
+    vec3 camera_dir = normalize(vec3(0.0f, 0.0f, -1.0f)-camera_pos)*2.0f;
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
 
     Scene scene{std::shared_ptr<const Geometry>(geometry), std::shared_ptr<const Lighting>(lighting), std::shared_ptr<const Camera>(camera)};
@@ -151,6 +156,8 @@ int main(){
     GridRenderPlane r_plane(640, 640);
 
     render(scene, r_plane, 10*r_plane.width*r_plane.height);
+
+    cout << "Max value = " << r_plane.max_value << endl;
 
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
