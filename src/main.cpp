@@ -134,8 +134,8 @@ int main(){
     LightingImpl* lighting = new LightingImpl();
     lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, 0.0f}, 1.0f));
     lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, 0.0f}, 1.0f, 0.1f));
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f-0.1f, 0.0f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f, -0.1f}, vec3{0.2f, 0.0f, 0.0f}, vec3{0.0f, 0.0f, 0.2f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f,-0.1f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f,      0.0f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
@@ -149,7 +149,7 @@ int main(){
     render(scene, r_plane, 10*r_plane.width*r_plane.height);
 
     FILE* fp = fopen("result.pgm", "wb");
-    fprintf(fp, "P2\n%lu %lu\n%lu\n", r_plane.width, r_plane.height, 255);
+    fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
