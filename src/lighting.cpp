@@ -88,14 +88,19 @@ std::optional<light_intersection> AreaLight::sample() const {
     return res;
 }
 
-std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 direction) const {
+// TODO Tes and repair it in case ray lies in the plane of this light source
+std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 direction) const {    
     // <origin+dir*t-this->origin, n>=0
     // origin*n + t*dir*n - this->origin*n = 0
     // t = n*(this->origin-origin) / n*dir
     vec3 n = normalize(cross(x_axis, y_axis));
+
     float n_dir = dot(n, direction);
-    if(n_dir < 1e-6)
+
+    // skip extreme angles and back-face hits
+    if(abs(n_dir) < 1e-6 || n_dir > 0.0f)
         return {};
+
     float t = dot(n, this->position-origin) / n_dir;
     if(t<0.0f)
         return {};

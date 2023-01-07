@@ -4,6 +4,7 @@
 #include "tracer_interfaces.h"
 
 #include <memory>
+#include <iostream>
 
 #include <cstdio>
 
@@ -75,6 +76,7 @@ static struct{
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     for(size_t sample=0; sample<n_samples; ++sample){
+
         float x = randf();
         float y = randf();
 
@@ -121,6 +123,9 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
         // rays that fell above depth limit are just ignored
 
+        if((sample+1) % 1000 == 0)
+            cout << (sample+1)/1000 << "k / " << n_samples/1000 << "k" << endl;
+
     }// for sample
 }
 
@@ -133,7 +138,7 @@ int main(){
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f, -0.1f}, vec3{0.2f, 0.0f, 0.0f}, vec3{0.0f, 0.0f, 0.2f}, 1.0f));
 
     Geometry* geometry = new Floor();
-    vec3 camera_pos(0.0f, -3.0f, 0.0f);
+    vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
 
@@ -141,10 +146,10 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 1000*r_plane.width*r_plane.height);
+    render(scene, r_plane, 10*r_plane.width*r_plane.height);
 
-    FILE* fp = fopen("render.pgm", "wb");
-    fprintf(fp, "P2\n%d %d\n%d\n", r_plane.width, r_plane.height, 255);
+    FILE* fp = fopen("result.pgm", "wb");
+    fprintf(fp, "P2\n%lu %lu\n%lu\n", r_plane.width, r_plane.height, 255);
 
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
@@ -152,6 +157,7 @@ int main(){
         }
         fprintf(fp, "\n");
     }// for y
+    fclose(fp);
 
     return 0;
 }
