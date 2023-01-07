@@ -15,7 +15,10 @@ static struct{
     std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
 
     float operator()() {
-        return dist(gen);
+        float res = dist(gen);
+        while(res==1.0f)
+            res = dist(gen);
+        return res;
     }
 } randf;
 
