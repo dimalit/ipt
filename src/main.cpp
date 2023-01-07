@@ -107,6 +107,10 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             }
 
             // geometry hit
+
+            // DEBUG Draw geometry slightly to understand what is where
+            r_plane.addRay(x, y, 0.01);
+
             vec3 new_direction = si->sdf->trySample();
 
             if(new_direction == vec3()){
