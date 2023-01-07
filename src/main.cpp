@@ -89,7 +89,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         // ray bouncing loop
         // with hard-limited depth
         float dimming_coef = 1.0f;
-        for(size_t depth=0; depth<5; ++depth){
+        for(size_t depth=0; depth<2; ++depth){
 
             std::optional<surface_intersection> si = scene.geometry->traceRay(origin, direction);
             std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);
@@ -140,6 +140,7 @@ int main(){
 
     LightingImpl* lighting = new LightingImpl();
     lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 25.0f));
+    // TODO Why it has non-proportional power?
     lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.88f}, 25.0f, 0.1f));
     // radiates down
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.9f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
@@ -162,9 +163,10 @@ int main(){
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
+    float gamma = 0.8f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
-            fprintf(fp, "%d ", (int)(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value*255));
+            fprintf(fp, "%d ", (int)(pow(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value, gamma)*255));
         }
         fprintf(fp, "\n");
     }// for y
