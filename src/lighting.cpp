@@ -23,10 +23,10 @@ class LightToDistribution: public DdfImpl {
     // TODO Think about this
     friend class Superposition;
 private:
-    std::shared_ptr<const LightImpl> light;
+    const LightImpl* light;
     glm::vec3 origin;
 public:
-    LightToDistribution(std::shared_ptr<const LightImpl> light, glm::vec3 origin) {
+    LightToDistribution(const LightImpl* light, glm::vec3 origin) {
         // TODO this is rough estimation, but for relatively small lights will work
         this->full_theoretical_weight = light->power / pow((light->position-origin).length(), 2);
         this->light = light;
@@ -58,7 +58,9 @@ float LightToDistribution::value( glm::vec3 direction ) const {
 }
 
 std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
-    return std::make_shared<const LightToDistribution>(this, pos);
+    const LightImpl* cast = dynamic_cast<const LightImpl*>(this);
+    assert(cast);
+    return std::make_shared<const LightToDistribution>(cast, pos);
 }
 
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){
@@ -78,6 +80,7 @@ std::optional<light_intersection> AreaLight::sample() const {
     light_intersection res;
     res.position = pos;
     res.normal = normalize(cross(x_axis, y_axis));
+    res.surface_power = this->power/this->area;
 
     return res;
 }
@@ -113,6 +116,7 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     light_intersection res;
     res.position = pos;
     res.normal = normalize(cross(x_axis, y_axis));
+    res.surface_power = this->power/this->area;
 
     return res;
 }
@@ -125,6 +129,7 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
     light_intersection res;
     res.position = origin + direction*t;
     res.normal = normalize(res.position - this->position);
+    res.surface_power = this->power/this->area;
 
     return res;
 }
@@ -141,6 +146,7 @@ optional<light_intersection> SphereLight::sample() const {
     light_intersection res;
     res.position = pos;
     res.normal = normalize(res.position - this->position);
+    res.surface_power = this->power/this->area;
 
     return res;
 }

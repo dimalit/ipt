@@ -84,7 +84,7 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         shared_ptr<RotateDdf> rotate_cap = make_shared<RotateDdf>(res.normal);
         rotate_cap->origin = make_shared<UpperHalfDdf>();
 
-        shared_ptr<const Ddf> dist = unite(rotate_diffuse, apply(rotate_specular, rotate_cap));
+        shared_ptr<const Ddf> dist = unite(rotate_diffuse, ::apply(rotate_specular, rotate_cap));
 
         res.sdf = dist;
     }

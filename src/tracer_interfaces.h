@@ -19,6 +19,7 @@ struct surface_intersection: public intersection {
 };
 
 struct light_intersection: public intersection {
+    float surface_power;
 };
 
 struct Geometry {
@@ -31,7 +32,7 @@ struct Lighting {
 };
 
 struct Camera {
-
+    virtual std::pair<glm::vec3, glm::vec3> sampleRay(float x, float y) const = 0;
 };
 
 struct Scene{
@@ -41,7 +42,7 @@ struct Scene{
 };
 
 struct RenderPlane {
-
+    virtual void addRay(float x, float y, float value) = 0;
 };
 
 #endif // TRACER_INTERFACES_H
