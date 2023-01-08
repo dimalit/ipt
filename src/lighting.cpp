@@ -7,6 +7,8 @@
 using namespace glm;
 using namespace std;
 
+light_intersection Lighting::last_sample;
+
 // TODO deduplicate
 static struct{
     std::random_device rdev;
@@ -40,6 +42,7 @@ public:
 
 glm::vec3 LightToDistribution::trySample() const {
     light_intersection inter = light->sample();
+    Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
     glm::vec3 dir = glm::normalize(inter.position-origin);
     float cosinus = dot(inter.normal, -dir);
     if(cosinus <= 0.0f)               // if facing back

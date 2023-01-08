@@ -29,6 +29,7 @@ struct Geometry {
 struct Lighting {
     virtual std::shared_ptr<const Ddf> distributionInPoint(glm::vec3 pos) const = 0;
     virtual std::optional<light_intersection> traceRayToLight(glm::vec3 origin, glm::vec3 direction) const = 0;
+    static light_intersection last_sample;
 };
 
 struct Camera {
