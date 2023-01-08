@@ -113,7 +113,9 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
-            vec3 light_direction = light_ddf->trySample();
+            shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
+            vec3 light_direction = combined_ddf->trySample();
+
             std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
             std::optional<light_intersection> light_li   = scene.lighting->traceRayToLight(si->position, light_direction);
             if(light_li.has_value()){
