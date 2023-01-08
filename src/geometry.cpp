@@ -51,6 +51,9 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         intersected_plane = -1;
     }
 
+    if(dist==numeric_limits<float>::infinity())
+        return {};
+
     surface_intersection res;
     res.position = origin + direction * dist;
 

@@ -100,7 +100,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
                 if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
                     float value = dot(li->normal, -direction)*li->surface_power;
                     r_plane.addRay(x, y, value*dimming_coef);
-                    break;
+                    continue;
                 }
             }// if li
 
@@ -140,6 +140,10 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             }// if light_direction
 
             // 2 continue to geometry
+            //DEBUG for geometry debugging
+            //r_plane.addRay(x, y, abs(si->position.z));
+            //continue;
+
             vec3 new_direction = si->sdf->trySample();
 
             if(new_direction == vec3()){
@@ -175,7 +179,7 @@ int main(){
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
-    vec3 camera_dir = normalize(vec3(0.0f, 0.0f, -1.0f)-camera_pos);
+    vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
 
     Scene scene{std::shared_ptr<const Geometry>(geometry), std::shared_ptr<const Lighting>(lighting), std::shared_ptr<const Camera>(camera)};
