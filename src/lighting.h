@@ -14,7 +14,7 @@ struct Light {
 };
 
 struct LightImpl: public Light {
-    virtual std::optional<light_intersection> sample() const = 0;
+    virtual light_intersection sample() const = 0;
 };
 
 class AreaLight: public LightImpl {
@@ -29,7 +29,7 @@ private:
 public:
     AreaLight(glm::vec3 origin, glm::vec3 x_axis, glm::vec3 y_axis, float power, type_t type=TYPE_DIAMOND);
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
-    virtual std::optional<light_intersection> sample() const override;
+    virtual light_intersection sample() const override;
 };
 
 class PointLight:public LightImpl {
@@ -44,7 +44,7 @@ public:
         return {};
     }
 
-    virtual std::optional<light_intersection> sample() const override {
+    virtual light_intersection sample() const override {
         light_intersection res;
         res.position = this->position;
         // TODO How to set it? It should discard half of the power somehow...
@@ -63,7 +63,7 @@ struct SphereLight: public LightImpl {
         area = 4.0 * M_PI * radius;
     }
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
-    virtual std::optional<light_intersection> sample() const override;
+    virtual light_intersection sample() const override;
 };
 
 #endif // LIGHTING_H

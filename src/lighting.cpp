@@ -40,11 +40,9 @@ public:
 };
 
 glm::vec3 LightToDistribution::trySample() const {
-    std::optional<light_intersection> inter = light->sample();
-    if(!inter.has_value())            // if failed
-        return glm::vec3();
-    glm::vec3 dir = glm::normalize(inter->position-origin);
-    float cosinus = dot(inter->normal, -dir);
+    light_intersection inter = light->sample();
+    glm::vec3 dir = glm::normalize(inter.position-origin);
+    float cosinus = light->area == 0.0f ? 1.0f : dot(inter.normal, -dir);
     if(cosinus <= 0.0f)               // if facing back
         return glm::vec3();
     return randf() <= cosinus ? dir : vec3();
@@ -75,13 +73,13 @@ AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t 
     float full_area = length(cross(x_axis, y_axis));
     area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
 }
-std::optional<light_intersection> AreaLight::sample() const {
+light_intersection AreaLight::sample() const {
     float u1 = randf();
     float u2 = randf() * (type==TYPE_TRIANLE ? 1.0f-u1 : 1.0f );
     vec3 pos = x_axis*u1 + y_axis*u2;
 
     light_intersection res;
-    res.position = pos;
+    res.position = pos + this->position;
     res.normal = normalize(cross(x_axis, y_axis));
     res.surface_power = this->power/this->area;
 
@@ -142,18 +140,18 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
     return res;
 }
 
-optional<light_intersection> SphereLight::sample() const {
+light_intersection SphereLight::sample() const {
 
     float u1 = randf()*2.0f - 1.0f;     // -1..+1
     float u2 = randf();
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
-    float r = sin(alpha);
-    vec3 pos(r*cos(phi), r*sin(phi), u1);
+    float r = radius*sin(alpha);
+    vec3 pos(r*cos(phi), r*sin(phi), radius*u1);
 
     light_intersection res;
-    res.position = pos;
-    res.normal = normalize(res.position - this->position);
+    res.position = pos + this->position;
+    res.normal = normalize(pos);
     res.surface_power = this->power/this->area;
 
     return res;

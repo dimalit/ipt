@@ -25,6 +25,9 @@ public:
 // TODO Indicate somehow that trySample should always succeed!
 struct UnionDdf: public Ddf {
     std::vector< std::shared_ptr<const Ddf> > components;
+    UnionDdf(){
+        full_theoretical_weight = 0.0f;
+    }
     // weight eqals to sum of weights
     virtual glm::vec3 trySample() const override;
 };

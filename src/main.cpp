@@ -89,7 +89,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         // ray bouncing loop
         // with hard-limited depth
         float dimming_coef = 1.0f;
-        for(size_t depth=0; depth<2; ++depth){
+        for(size_t depth=0; depth<1; ++depth){
 
             std::optional<surface_intersection> si = scene.geometry->traceRay(origin, direction);
             std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);
@@ -111,9 +111,20 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
             // geometry hit
 
-            // DEBUG Draw geometry slightly to understand what is where
-            //r_plane.addRay(x, y, 0.01);
+            // 1 cast ray to light
+            shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
+            vec3 light_direction = light_ddf->trySample();
+            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
+            std::optional<light_intersection> light_li   = scene.lighting->traceRayToLight(si->position, light_direction);
+            if(light_li.has_value()){
+                // if not obscured by geometry
+                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li->position-si->position)){
+                    float value = dot(light_li->normal, -light_direction)*light_li->surface_power/pow(length(light_li->position-si->position), 2);
+                    r_plane.addRay(x, y, value);
+                }
+            }// if li
 
+            // 2 continue to geometry
             vec3 new_direction = si->sdf->trySample();
 
             if(new_direction == vec3()){
@@ -139,13 +150,13 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 25.0f));
+    //lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 10.0f));
     // TODO Why it has non-proportional power?
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.88f}, 25.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.80f}, 10.0f, 0.1f));
     // radiates down
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.9f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.8f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.88-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.80-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
@@ -163,7 +174,7 @@ int main(){
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
-    float gamma = 0.8f;
+    float gamma = 1.0f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
             fprintf(fp, "%d ", (int)(pow(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value, gamma)*255));

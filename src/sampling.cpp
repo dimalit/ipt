@@ -116,10 +116,12 @@ vec3 UnionDdf::trySample() const {
         // TODO What's best used here as i?
         for( const std::shared_ptr<const Ddf>& c: components ){
             acc += c->full_theoretical_weight;
-            if(r<acc)
+            if(r<acc){
                 res = c->trySample();
+                break;
+            }
         }// for
-        assert(false && "Loop should always break inside!");
+        assert(r<acc);
     }while(res == vec3());
     return res;
 }
@@ -143,7 +145,7 @@ std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const D
             // add b to array a
             std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>(*ua);  // copy
             res->components.push_back(b);
-            res->full_theoretical_weight += a->full_theoretical_weight;
+            res->full_theoretical_weight += b->full_theoretical_weight;
             return res;
         }
     }
