@@ -19,7 +19,7 @@ public:
         return source->value(x) * dest->value(x);
     }
 
-    virtual glm::vec3 trySample() const override;
+    virtual sample trySample() const override;
 };
 
 // TODO Indicate somehow that trySample should always succeed!
@@ -29,7 +29,7 @@ struct UnionDdf: public Ddf {
         full_theoretical_weight = 0.0f;
     }
     // weight eqals to sum of weights
-    virtual glm::vec3 trySample() const override;
+    virtual sample trySample() const override;
 };
 
 #endif // SAMPLING_DETAIL_H

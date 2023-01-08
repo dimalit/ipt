@@ -9,11 +9,18 @@
 
 #include "sampling_fwd.h"
 
+class intersection;
+
+struct sample {
+    glm::vec3 direction;
+    std::shared_ptr<intersection> location;
+};
+
 struct Ddf {
 
     // may return 0 if sampling failed
     // this is used to balance parts of union distribution
-    virtual glm::vec3 trySample() const = 0;
+    virtual sample trySample() const = 0;
 
     float full_theoretical_weight = 1.0f;
 
@@ -37,9 +44,10 @@ struct DdfImpl: public Ddf {
 struct TransformDdf: public Ddf {
     std::shared_ptr<const Ddf> origin;
     glm::mat3 transformation;
-    virtual glm::vec3 trySample() const override {
-        glm::vec3 x = origin->trySample();
-        return transformation * x;
+    virtual sample trySample() const override {
+        sample x = origin->trySample();
+        x.direction = transformation * x.direction;
+        return x;
     }
     // TODO Need separate implementations for Continuous and Singular
 };
@@ -56,14 +64,14 @@ struct RotateDdf: public TransformDdf {
 
 struct UpperHalfDdf: public DdfImpl {
     UpperHalfDdf();
-    virtual glm::vec3 trySample() const override;
+    virtual sample trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
 class CosineDdf: public DdfImpl {
 public:
     CosineDdf(float w);
-    virtual glm::vec3 trySample() const override;
+    virtual sample trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
@@ -73,8 +81,10 @@ public:
         max_value = std::numeric_limits<float>::infinity();
         full_theoretical_weight = w;
     }
-    virtual glm::vec3 trySample() const override {
-        return glm::vec3(0.0f, 0.0f, 1.0f);
+    virtual sample trySample() const override {
+        sample res;
+        res.direction = glm::vec3(0.0f, 0.0f, 1.0f);
+        return res;
     }
     virtual float value( glm::vec3 arg ) const override {
         return std::numeric_limits<float>::quiet_NaN();

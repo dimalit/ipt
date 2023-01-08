@@ -30,13 +30,15 @@ UpperHalfDdf::UpperHalfDdf(){
     max_value = 0.5f/M_PI;
     full_theoretical_weight = 2.0f*M_PI; // simulate as though pdf=1
 }
-vec3 UpperHalfDdf::trySample() const {
+sample UpperHalfDdf::trySample() const {
     float u1 = randf();
     float u2 = randf();
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), u1);
+    sample res;
+    res.direction = vec3(r*cos(phi), r*sin(phi), u1);
+    return res;
 }
 float UpperHalfDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -50,13 +52,15 @@ CosineDdf::CosineDdf(float w){
     max_value = 1.0f/M_PI;
     full_theoretical_weight = w;
 }
-vec3 CosineDdf::trySample() const {
+sample CosineDdf::trySample() const {
     float u1 = randf();
     float u2 = randf();
     float alpha = acos(sqrt(u1));
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), cos(alpha));
+    sample res;
+    res.direction = vec3(r*cos(phi), r*sin(phi), cos(alpha));
+    return res;
 }
 float CosineDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -86,10 +90,10 @@ SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shar
     full_theoretical_weight *= dest->max_value;    // and mult by source_integal, but this is implicit
 }
 
-vec3 SuperpositionDdf::trySample() const {
+sample SuperpositionDdf::trySample() const {
 
-    vec3 x = source->trySample();
-    if(x == vec3())         // fail if fail
+    sample x = source->trySample();
+    if(x.direction == vec3())         // fail if fail
         return x;
 
     // NB should not be both singular
@@ -103,13 +107,13 @@ vec3 SuperpositionDdf::trySample() const {
     // we get k >= dest
     float k = dest->max_value;
 
-    bool hit = p_hit( this->value( x ) / (source->value( x )*k) );
+    bool hit = p_hit( this->value( x.direction ) / (source->value( x.direction )*k) );
 
-    return hit ? x : vec3();
+    return hit ? x : sample();
 }
 
-vec3 UnionDdf::trySample() const {
-    vec3 res;
+sample UnionDdf::trySample() const {
+    sample res;
     do{
         float r = randf()*full_theoretical_weight;
         float acc = 0.0f;
@@ -122,7 +126,7 @@ vec3 UnionDdf::trySample() const {
             }
         }// for
         assert(r<acc);
-    }while(res == vec3());
+    }while(res.direction == vec3());
     return res;
 }
 

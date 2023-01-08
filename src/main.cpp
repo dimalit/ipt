@@ -114,21 +114,20 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
             shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
-            vec3 light_direction = combined_ddf->trySample();
+            struct sample light_sample = combined_ddf->trySample();
 
-            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
-            std::optional<light_intersection> light_li   = scene.lighting->traceRayToLight(si->position, light_direction);
-            if(light_li.has_value()){
-                // if not obscured by geometry
-                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li->position-si->position)){
-                    // NB We ignore surface_power and distance as they are already included in sampling function!
-                    float value = dot(light_li->normal, -light_direction) * combined_ddf->full_theoretical_weight;
-                    r_plane.addRay(x, y, value);
-                }
-            }// if li
+            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_sample.direction);
+            light_intersection* light_li = dynamic_cast<light_intersection*>(light_sample.location.get());
+            assert(light_li);
+            // if not obscured by geometry
+            if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li->position-si->position)){
+                // NB We ignore surface_power and distance as they are already included in sampling function!
+                float value = dot(light_li->normal, -light_sample.direction) * combined_ddf->full_theoretical_weight;
+                r_plane.addRay(x, y, value);
+            }
 
             // 2 continue to geometry
-            vec3 new_direction = si->sdf->trySample();
+            vec3 new_direction = si->sdf->trySample().direction;
 
             if(new_direction == vec3()){
                 r_plane.addRay(x, y, 0.0f);
@@ -153,8 +152,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    //lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 10.0f));
-    // TODO Why it has non-proportional power?
+    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.6f}, 1.0f));
     lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.60f}, 1.0f, 0.1f));
     // radiates down
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.6f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));

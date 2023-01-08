@@ -34,17 +34,19 @@ public:
         this->light = light;
         this->origin = origin;
     }
-    virtual glm::vec3 trySample() const override;
+    virtual sample trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
 };
 
-glm::vec3 LightToDistribution::trySample() const {
-    light_intersection inter = light->sample();
-    glm::vec3 dir = glm::normalize(inter.position-origin);
-    float cosinus = dot(inter.normal, -dir);
+sample LightToDistribution::trySample() const {
+    sample res;
+    res.location = make_shared<light_intersection>(light->sample());
+    res.direction = glm::normalize(res.location->position-origin);
+
+    float cosinus = dot(res.location->normal, -res.direction);
     if(cosinus <= 0.0f)               // if facing back
-        return glm::vec3();
-    return randf() <= cosinus ? dir : vec3();
+        return sample();
+    return randf() <= cosinus ? res : sample();
 }
 
 float LightToDistribution::value( glm::vec3 direction ) const {

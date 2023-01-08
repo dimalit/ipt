@@ -11,6 +11,7 @@
 struct intersection {
     glm::vec3 position;
     glm::vec3 normal;
+    virtual ~intersection(){}
 };
 
 struct surface_intersection: public intersection {
