@@ -121,7 +121,8 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             if(light_li.has_value()){
                 // if not obscured by geometry
                 if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li->position-si->position)){
-                    float value = dot(light_li->normal, -light_direction)*light_li->surface_power/pow(length(light_li->position-si->position), 2);
+                    // NB We ignore surface_power as it is already included in sampling function!
+                    float value = dot(light_li->normal, -light_direction) / pow(length(light_li->position-si->position), 2);
                     r_plane.addRay(x, y, value);
                 }
             }// if li
@@ -154,7 +155,7 @@ int main(){
     LightingImpl* lighting = new LightingImpl();
     //lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 10.0f));
     // TODO Why it has non-proportional power?
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.80f}, 10.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.80f}, 1.0f, 0.1f));
     // radiates down
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.8f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward

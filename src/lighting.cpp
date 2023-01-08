@@ -30,8 +30,7 @@ private:
     glm::vec3 origin;
 public:
     LightToDistribution(const LightImpl* light, glm::vec3 origin) {
-        // TODO this is rough estimation, but for relatively small lights will work
-        this->full_theoretical_weight = light->power / pow(length(light->position-origin), 2);
+        this->full_theoretical_weight = light->power;
         this->light = light;
         this->origin = origin;
     }
@@ -42,7 +41,7 @@ public:
 glm::vec3 LightToDistribution::trySample() const {
     light_intersection inter = light->sample();
     glm::vec3 dir = glm::normalize(inter.position-origin);
-    float cosinus = light->area == 0.0f ? 1.0f : dot(inter.normal, -dir);
+    float cosinus = dot(inter.normal, -dir);
     if(cosinus <= 0.0f)               // if facing back
         return glm::vec3();
     return randf() <= cosinus ? dir : vec3();
@@ -54,7 +53,9 @@ float LightToDistribution::value( glm::vec3 direction ) const {
         return 0.0f;
     glm::vec3 dir = glm::normalize(inter->position-origin);
     float cosinus = dot(inter->normal, -dir);
-    assert(cosinus >= 0.0f);
+    assert(cosinus > -1e-6);
+    if(cosinus<0.0f)
+        cosinus = 0.0f;
     return cosinus;
 }
 
@@ -81,12 +82,13 @@ light_intersection AreaLight::sample() const {
     light_intersection res;
     res.position = pos + this->position;
     res.normal = normalize(cross(x_axis, y_axis));
-    res.surface_power = this->power/this->area;
+    // TODO probably remove it somehow
+    res.surface_power = std::numeric_limits<float>::signaling_NaN();
 
     return res;
 }
 
-// TODO Tes and repair it in case ray lies in the plane of this light source
+// TODO Test and repair it in case ray lies in the plane of this light source
 std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 direction) const {    
     // <origin+dir*t-this->origin, n>=0
     // origin*n + t*dir*n - this->origin*n = 0
@@ -152,7 +154,27 @@ light_intersection SphereLight::sample() const {
     light_intersection res;
     res.position = pos + this->position;
     res.normal = normalize(pos);
-    res.surface_power = this->power/this->area;
+    // TODO probably remove it somehow
+    res.surface_power = std::numeric_limits<float>::signaling_NaN();
+
+    return res;
+}
+
+light_intersection PointLight::sample() const {
+
+    // TODO deduplicate with SphereLight
+    float u1 = randf()*2.0f - 1.0f;     // -1..+1
+    float u2 = randf();
+    float alpha = acos(u1);
+    float phi = 2*M_PI*u2;
+    float r = sin(alpha);
+    vec3 normal(r*cos(phi), r*sin(phi), u1);
+
+    light_intersection res;
+    res.position = this->position;
+    res.normal = normal;
+    // TODO probably remove it somehow
+    res.surface_power = std::numeric_limits<float>::signaling_NaN();
 
     return res;
 }

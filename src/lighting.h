@@ -44,14 +44,7 @@ public:
         return {};
     }
 
-    virtual light_intersection sample() const override {
-        light_intersection res;
-        res.position = this->position;
-        // TODO How to set it? It should discard half of the power somehow...
-        // res.normal =
-        // res.surface_power
-        return res;
-    }
+    virtual light_intersection sample() const override;
 };
 
 struct SphereLight: public LightImpl {
