@@ -121,8 +121,8 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             if(light_li.has_value()){
                 // if not obscured by geometry
                 if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li->position-si->position)){
-                    // NB We ignore surface_power as it is already included in sampling function!
-                    float value = dot(light_li->normal, -light_direction) / pow(length(light_li->position-si->position), 2);
+                    // NB We ignore surface_power and distance as they are already included in sampling function!
+                    float value = dot(light_li->normal, -light_direction) * combined_ddf->full_theoretical_weight;
                     r_plane.addRay(x, y, value);
                 }
             }// if li

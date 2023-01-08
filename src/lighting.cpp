@@ -30,7 +30,7 @@ private:
     glm::vec3 origin;
 public:
     LightToDistribution(const LightImpl* light, glm::vec3 origin) {
-        this->full_theoretical_weight = light->power;
+        this->full_theoretical_weight = light->power / pow(length(origin-light->position), 2);
         this->light = light;
         this->origin = origin;
     }
