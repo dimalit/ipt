@@ -155,11 +155,11 @@ int main(){
     LightingImpl* lighting = new LightingImpl();
     //lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.9f}, 10.0f));
     // TODO Why it has non-proportional power?
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.80f}, 1.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.60f}, 1.0f, 0.1f));
     // radiates down
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.8f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.6f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.80-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.60-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
@@ -170,7 +170,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 5*r_plane.width*r_plane.height);
+    render(scene, r_plane, 50*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
