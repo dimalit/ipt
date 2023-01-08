@@ -108,21 +108,24 @@ vec3 SuperpositionDdf::trySample() const {
     return hit ? x : vec3();
 }
 
+// As from different points Union distribution looks differently -
+// it would fail with different rate for different points,
+// thus modeling difference in lighting
 vec3 UnionDdf::trySample() const {
     vec3 res;
-    do{
-        float r = randf()*full_theoretical_weight;
-        float acc = 0.0f;
-        // TODO What's best used here as i?
-        for( const std::shared_ptr<const Ddf>& c: components ){
-            acc += c->full_theoretical_weight;
-            if(r<acc){
-                res = c->trySample();
-                break;
-            }
-        }// for
-        assert(r<acc);
-    }while(res == vec3());
+    if(components.size() == 0)
+        return vec3();
+    float r = randf()*full_theoretical_weight;
+    float acc = 0.0f;
+    // TODO What's best used here as i?
+    for( const std::shared_ptr<const Ddf>& c: components ){
+        acc += c->full_theoretical_weight;
+        if(r<acc){
+            res = c->trySample();
+            break;
+        }
+    }// for
+    assert(r<acc);
     return res;
 }
 
@@ -144,6 +147,8 @@ std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const D
         else{
             // add b to array a
             std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>(*ua);  // copy
+            if(b->full_theoretical_weight == 0.0f)
+                return res;
             res->components.push_back(b);
             res->full_theoretical_weight += b->full_theoretical_weight;
             return res;
@@ -152,8 +157,10 @@ std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const D
     else{
         // add two simple distributions
         std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
-        res->components.push_back(a);
-        res->components.push_back(b);
+        if(a->full_theoretical_weight != 0.0f)
+            res->components.push_back(a);
+        if(b->full_theoretical_weight != 0.0f)
+            res->components.push_back(b);
         res->full_theoretical_weight = a->full_theoretical_weight + b->full_theoretical_weight;
         return res;
     }

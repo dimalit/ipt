@@ -62,8 +62,7 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
 
         shared_ptr<const Ddf> dis = make_shared<const CosineDdf>(1.0f);
 
-        shared_ptr<RotateDdf> rotate = make_shared<RotateDdf>(res.normal);
-        rotate->origin = dis;
+        shared_ptr<RotateDdf> rotate = make_shared<RotateDdf>(dis, res.normal);
         res.sdf = rotate;
     }
     else if(intersected_sphere){
@@ -75,19 +74,17 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         float eye_angle_cos = dot(-direction, res.normal);
 
         shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>(0.8f*eye_angle_cos);
-        shared_ptr<const Ddf> specular = make_shared<const MirrorDdf>(0.2f);
+        // DEBUG temporary skip: shared_ptr<const Ddf> specular = make_shared<const MirrorDdf>(0.2f);
 
-        shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(res.normal);
-        rotate_diffuse->origin = diffuse;
+        shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(diffuse, res.normal);
 
-        shared_ptr<RotateDdf> rotate_specular = make_shared<RotateDdf>(reflection);
-        rotate_specular->origin = specular;
-        shared_ptr<RotateDdf> rotate_cap = make_shared<RotateDdf>(res.normal);
-        rotate_cap->origin = make_shared<UpperHalfDdf>();
+        //shared_ptr<RotateDdf> rotate_specular = make_shared<RotateDdf>(reflection);
+        //rotate_specular->origin = specular;
+        shared_ptr<RotateDdf> rotate_cap = make_shared<RotateDdf>(make_shared<UpperHalfDdf>(), res.normal);
 
-        shared_ptr<const Ddf> dist = unite(rotate_diffuse, ::apply(rotate_specular, rotate_cap));
+        //shared_ptr<const Ddf> dist = unite(rotate_diffuse, ::apply(rotate_specular, rotate_cap));
 
-        res.sdf = dist;
+        res.sdf = rotate_diffuse;
     }
     else {
         return {};

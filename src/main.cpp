@@ -116,15 +116,28 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
             vec3 light_direction = combined_ddf->trySample();
 
-            light_intersection light_li   = Lighting::last_sample;
-
-            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
-            // if not obscured by geometry
-            if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
-                // NB We ignore surface_power and distance as they are already included in sampling function!
-                float value = dot(light_li.normal, -light_direction) * combined_ddf->full_theoretical_weight;
-                r_plane.addRay(x, y, value);
+            if( light_direction == vec3()){
+                r_plane.addRay(x, y, 0.0f);
             }
+            else {
+
+                light_intersection light_li   = Lighting::last_sample;
+                std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
+
+                // if not obscured by geometry
+                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
+
+                    // NB We ignore surface_power and distance as they are already included in sampling function!
+                    float cosinus = dot(light_li.normal, -light_direction);
+                    if(cosinus < 0.0f)
+                        cosinus = 0.0f;
+
+                    float value = cosinus * combined_ddf->full_theoretical_weight;
+
+                    r_plane.addRay(x, y, value);
+
+                }// if not obscured by geometry
+            }// if light_direction
 
             // 2 continue to geometry
             vec3 new_direction = si->sdf->trySample();
@@ -152,13 +165,13 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    lighting->lights.push_back(make_shared<const PointLight>(vec3{1.0f, 0.0f, -0.6f}, 1.0f));
+    lighting->lights.push_back(make_shared<const PointLight>(vec3{0.9f, 0.0f, -0.6f}, 1.0f));
     // TODO Why it has non-proportional power?
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-1.0f, 0.0f, -0.60f}, 1.0f, 0.1f));
+    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-0.8f, 0.0f, -0.60f}, 1.0f, 0.1f));
     // radiates down
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +1.0f-0.1f, -0.6f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +0.8f-0.1f, -0.6f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
     // radiates forward
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -1.0f, -0.60-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
     Geometry* geometry = new Floor();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
@@ -169,14 +182,14 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 50*r_plane.width*r_plane.height);
+    render(scene, r_plane, 20*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
-    float gamma = 1.0f;
+    float gamma = 0.6f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
             fprintf(fp, "%d ", (int)(pow(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value, gamma)*255));

@@ -34,19 +34,32 @@ struct DdfImpl: public Ddf {
 };
 
 // TODO hide t from interface?
-struct TransformDdf: public Ddf {
-    std::shared_ptr<const Ddf> origin;
+struct TransformDdf: public DdfImpl {
+    std::shared_ptr<const DdfImpl> origin;
     glm::mat3 transformation;
+    TransformDdf(std::shared_ptr<const Ddf> origin, glm::mat3 transformation){
+        this->origin = std::dynamic_pointer_cast<const DdfImpl>(origin);
+        assert(this->origin);
+        this->transformation = transformation;
+        // XXX best-guess
+        this->max_value = dynamic_cast<const DdfImpl*>(origin.get())->max_value;
+    }
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
         return transformation * x;
     }
+
+    virtual float value( glm::vec3 arg ) const {
+        return origin->value(inverse(transformation)*arg);
+    }
+
     // TODO Need separate implementations for Continuous and Singular
 };
 
 // TODO bad idea to inherit implementation!
 struct RotateDdf: public TransformDdf {
-    RotateDdf(glm::vec3 to){
+    RotateDdf(std::shared_ptr<const Ddf> origin, glm::vec3 to)
+        :TransformDdf(origin, glm::mat3()){
         glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis = cross(z, to);
         float angle = dot(z,to);
