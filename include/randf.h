@@ -3,7 +3,7 @@
 
 #include <random>
 
-struct randf_t {
+static struct {
     std::random_device rdev;
     std::mt19937 gen = std::mt19937(rdev());
 
@@ -15,8 +15,6 @@ struct randf_t {
             res = dist(gen);
         return res;
     }
-};
-
-extern randf_t randf;
+} randf;
 
 #endif // RANDF_H

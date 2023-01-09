@@ -1,7 +1,7 @@
 #ifndef LIGHTING_H
 #define LIGHTING_H
 
-#include "sampling.h"
+#include "sampling/sampling.h"
 #include "tracer_interfaces.h"
 
 struct Light {

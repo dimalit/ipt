@@ -1,6 +1,6 @@
 #include "geometry.h"
 
-#include "sampling.h"
+#include "sampling/sampling.h"
 
 #include "geometric_utils.h"
 

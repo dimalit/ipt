@@ -1,5 +1,5 @@
 #include "randf.h"
-#include "ddf.h"
+#include "sampling/ddf.h"
 #include "CollectionLighting.h"
 #include "geometry.h"
 #include "tracer_interfaces.h"

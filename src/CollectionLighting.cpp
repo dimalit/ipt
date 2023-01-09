@@ -2,7 +2,7 @@
 
 #include "lighting.h"
 
-#include "ddf.h"
+#include "sampling/ddf.h"
 
 #include <glm/vec3.hpp>
 
