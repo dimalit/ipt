@@ -1,10 +1,8 @@
-#include "LightingImpl.h"
-#include "geometry.h"
-#include "tracer_interfaces.h"
 #include "randf.h"
 #include "ddf.h"
-
-#include "lighting.h"
+#include "CollectionLighting.h"
+#include "geometry.h"
+#include "tracer_interfaces.h"
 
 #include <glm/geometric.hpp>
 
@@ -158,7 +156,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
 int main(){
 
-    LightingImpl* lighting = new LightingImpl();
+    CollectionLighting* lighting = new CollectionLighting();
     lighting->addPointLight(vec3{0.9f, 0.0f, -0.6f}, 1.0f);
     // TODO Why it has non-proportional power?
     lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.60f}, 0.1f, 1.0f);
