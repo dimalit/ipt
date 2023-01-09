@@ -2,6 +2,11 @@
 #include "geometry.h"
 #include "tracer_interfaces.h"
 #include "randf.h"
+#include "ddf.h"
+
+#include "lighting.h"
+
+#include <glm/geometric.hpp>
 
 #include <memory>
 #include <iostream>
@@ -154,13 +159,13 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     LightingImpl* lighting = new LightingImpl();
-    lighting->lights.push_back(make_shared<const PointLight>(vec3{0.9f, 0.0f, -0.6f}, 1.0f));
+    lighting->addPointLight(vec3{0.9f, 0.0f, -0.6f}, 1.0f);
     // TODO Why it has non-proportional power?
-    lighting->lights.push_back(make_shared<const SphereLight>(vec3{-0.8f, 0.0f, -0.60f}, 1.0f, 0.1f));
+    lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.60f}, 0.1f, 1.0f);
     // radiates down
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, +0.8f-0.1f, -0.6f}, vec3{0.0f, 0.2f, 0.0f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->addAreaLight(vec3{-0.1f, +0.8f-0.1f, -0.6f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
     // radiates forward
-    lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
+    lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
     Geometry* geometry = new SphereInBox();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);

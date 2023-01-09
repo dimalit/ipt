@@ -44,7 +44,7 @@ public:
 
 struct SphereLight: public Light {
     float radius;
-    SphereLight(glm::vec3 origin, float power, float radius){
+    SphereLight(glm::vec3 origin, float radius, float power){
         this->position = origin;
         this->power = power;
         this->radius = radius;
