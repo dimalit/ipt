@@ -113,7 +113,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             }
 
             // geometry hit
-/*
+
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
             shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
@@ -141,7 +141,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
                 }// if not obscured by geometry
             }// if light_direction
-*/
+
             // 2 continue to geometry
             //DEBUG for geometry debugging
             //r_plane.addRay(x, y, si->position.y+1.0f);
