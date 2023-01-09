@@ -17,6 +17,9 @@ float intersection_with_box_plane(vec3 plane, vec3 origin, vec3 direction){
     vec3 point = origin + direction * t;
     if( abs(point.x) > 1.0f || abs(point.y) > 1.0f || abs(point.z) > 1.0f )
         return std::numeric_limits<float>::infinity();
+    // exclude back face
+    if(dot(direction, plane) < 0.0f)
+        return std::numeric_limits<float>::infinity();
     return t;
 }
 

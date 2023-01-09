@@ -26,6 +26,7 @@ struct GridRenderPlane: public RenderPlane {
     virtual void addRay(float x, float y, float value) override {
         assert(x >= 0.0f && x < 1.0f);
         assert(y >= 0.0f && y < 1.0f);
+        assert(value >= 0.0f);
 
         size_t xi = x*width;
         size_t yi = height-y*height-1;
@@ -89,7 +90,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         // ray bouncing loop
         // with hard-limited depth
         float dimming_coef = 1.0f;
-        for(size_t depth=0; depth<1; ++depth){
+        for(size_t depth=0; depth<2; ++depth){
 
             std::optional<surface_intersection> si = scene.geometry->traceRay(origin, direction);
             std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);
@@ -98,9 +99,11 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             if(li.has_value()){
                 // if not obscured by geometry
                 if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
+                    //if(depth>0)
+                    //    cout << "HIT" << endl;
                     float value = dot(li->normal, -direction)*li->surface_power;
-                    r_plane.addRay(x, y, value*dimming_coef);
-                    continue;
+                    r_plane.addRay(x, y, value >= 0.0f ? value*dimming_coef: 0.0f);
+                    break;
                 }
             }// if li
 
@@ -110,7 +113,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             }
 
             // geometry hit
-
+/*
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
             shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
@@ -138,11 +141,11 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
                 }// if not obscured by geometry
             }// if light_direction
-
+*/
             // 2 continue to geometry
             //DEBUG for geometry debugging
-            //r_plane.addRay(x, y, abs(si->position.z));
-            //continue;
+            //r_plane.addRay(x, y, si->position.y+1.0f);
+            //break;
 
             vec3 new_direction = si->sdf->trySample();
 
@@ -177,7 +180,7 @@ int main(){
     // radiates forward
     lighting->lights.push_back(make_shared<const AreaLight>(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3{0.0f, 0.0f, 0.2f}, vec3{0.2f, 0.0f, 0.0f}, 1.0f));
 
-    Geometry* geometry = new Floor();
+    Geometry* geometry = new SphereInBox();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
@@ -186,7 +189,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 20*r_plane.width*r_plane.height);
+    render(scene, r_plane, 100*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 

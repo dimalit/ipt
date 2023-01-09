@@ -62,8 +62,11 @@ struct RotateDdf: public TransformDdf {
         :TransformDdf(origin, glm::mat3()){
         glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis = cross(z, to);
-        float angle = dot(z,to);
-        transformation = rotate(glm::identity<glm::mat4>(), angle, axis);
+        // HACK corner case to=z
+        if(length(axis)<1e-6)
+            axis = glm::vec3(1.0f, 0.0f, 0.0f);
+        float cosinus = dot(z,to);
+        transformation = rotate(glm::identity<glm::mat4>(), (float)acos(cosinus), axis);
     }
 };
 

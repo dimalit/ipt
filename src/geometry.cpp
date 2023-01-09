@@ -33,7 +33,7 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
     };
 
     float dist = std::numeric_limits<float>::infinity();
-    size_t intersected_plane = -1;
+    int intersected_plane = -1;
     bool intersected_sphere = false;
 
     for(size_t i = 0; i<6; ++i){
@@ -44,7 +44,7 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         }
     }// for i
 
-    float t = intersection_with_sphere(1.0f, origin, direction);
+    float t = intersection_with_sphere(0.5f, origin, direction);
     if(t<dist){
         dist = t;
         intersected_sphere = true;
@@ -69,10 +69,10 @@ std::optional<surface_intersection> SphereInBox::traceRay(vec3 origin, vec3 dire
         res.sdf = rotate;
     }
     else if(intersected_sphere){
-        res.curvature = 1.0f;
+        res.curvature = 2.0f;
 
         // material
-        res.normal = res.position;
+        res.normal = normalize(res.position);
         vec3 reflection = reflect(direction, res.normal);
         float eye_angle_cos = dot(-direction, res.normal);
 
