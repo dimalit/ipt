@@ -4,8 +4,12 @@ project(ipt)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file( GLOB sources "src/*.cpp" "src/*.h")
-add_executable(ipt ${sources})
+include_directories(include)
 
-target_include_directories(ipt PRIVATE include)
+add_executable(ipt main.cpp)
+target_include_directories(ipt PRIVATE src)
+target_link_libraries(ipt PRIVATE ipt_lib)
 
+add_subdirectory(src)
+
+add_subdirectory(test)

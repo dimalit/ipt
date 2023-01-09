@@ -12,7 +12,7 @@
 struct Ddf {
 
     // may return 0 if sampling failed
-    // this is used to balance parts of union distribution
+    // this is used to implicitly lower distribution's weight
     virtual glm::vec3 trySample() const = 0;
 
     float full_theoretical_weight = 1.0f;
