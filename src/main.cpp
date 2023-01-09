@@ -1,7 +1,7 @@
 #include "LightingImpl.h"
 #include "geometry.h"
-
 #include "tracer_interfaces.h"
+#include "randf.h"
 
 #include <memory>
 #include <iostream>
@@ -59,24 +59,6 @@ struct SimpleCamera: public Camera {
         return {position, normalize(ray)};
     }
 };
-
-
-#include <random>
-
-// TODO deduplicate
-static struct{
-    std::random_device rdev;
-    std::mt19937 gen = std::mt19937(rdev());
-
-    std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
-
-    float operator()() {
-        float res = dist(gen);
-        while(res==1.0f)
-            res = dist(gen);
-        return res;
-    }
-} randf;
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     for(size_t sample=0; sample<n_samples; ++sample){
@@ -189,7 +171,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 100*r_plane.width*r_plane.height);
+    render(scene, r_plane, 5*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 

@@ -1,5 +1,3 @@
-#include "sampling_detail.h"
-
 #include "lighting.h"
 
 using namespace glm;

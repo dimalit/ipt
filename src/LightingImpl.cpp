@@ -2,13 +2,10 @@
 
 #include "sampling.h"
 
-// TODO this should be hidden and not needed
-#include "sampling_detail.h"
-
 using namespace std;
 
 shared_ptr<const Ddf> LightingImpl::distributionInPoint(glm::vec3 pos) const {
-    std::shared_ptr<const Ddf> res = make_shared<const UnionDdf>();
+    std::shared_ptr<const Ddf> res = unite();
     for(shared_ptr<const Light> l: lights){
         res = unite(res, l->lightToPoint(pos));
     }

@@ -19,6 +19,8 @@ struct Ddf {
 
 };
 
+namespace detail {
+
 struct DdfImpl: public Ddf {
 
     // will return NaN if singular
@@ -33,16 +35,18 @@ struct DdfImpl: public Ddf {
     }
 };
 
+}// namespace
+
 // TODO hide t from interface?
-struct TransformDdf: public DdfImpl {
-    std::shared_ptr<const DdfImpl> origin;
+struct TransformDdf: public detail::DdfImpl {
+    std::shared_ptr<const detail::DdfImpl> origin;
     glm::mat3 transformation;
     TransformDdf(std::shared_ptr<const Ddf> origin, glm::mat3 transformation){
-        this->origin = std::dynamic_pointer_cast<const DdfImpl>(origin);
+        this->origin = std::dynamic_pointer_cast<const detail::DdfImpl>(origin);
         assert(this->origin);
         this->transformation = transformation;
         // XXX best-guess
-        this->max_value = dynamic_cast<const DdfImpl*>(origin.get())->max_value;
+        this->max_value = dynamic_cast<const detail::DdfImpl*>(origin.get())->max_value;
     }
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
@@ -70,20 +74,20 @@ struct RotateDdf: public TransformDdf {
     }
 };
 
-struct UpperHalfDdf: public DdfImpl {
+struct UpperHalfDdf: public detail::DdfImpl {
     UpperHalfDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
-class CosineDdf: public DdfImpl {
+class CosineDdf: public detail::DdfImpl {
 public:
     CosineDdf(float w);
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
-class MirrorDdf: public DdfImpl {
+class MirrorDdf: public detail::DdfImpl {
 public:
     MirrorDdf(float w){
         max_value = std::numeric_limits<float>::infinity();
@@ -97,7 +101,7 @@ public:
     }
 };
 
-extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const Ddf> b);
+extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a = nullptr, std::shared_ptr<const Ddf> b = nullptr);
 extern std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest);
 
 #endif // SAMPLING_H

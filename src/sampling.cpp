@@ -1,26 +1,12 @@
-#include "sampling_detail.h"
+#include "sampling.h"
+
+#include "randf.h"
 
 #include <functional>
 #include <cassert>
 #include <algorithm>
-#include <random>
 
 using namespace glm;
-
-// TODO deduplicate
-static struct{
-    std::random_device rdev;
-    std::mt19937 gen = std::mt19937(rdev());
-
-    std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
-
-    float operator()() {
-        float res = dist(gen);
-        while(res==1.0f)
-            res = dist(gen);
-        return res;
-    }
-} randf;
 
 bool p_hit(float prob){
     return randf() < prob;
@@ -65,6 +51,35 @@ float CosineDdf::value( vec3 arg ) const {
         return 0.0f;
     return 1.0f/M_PI*arg.z;
 }
+
+namespace detail {
+
+class SuperpositionDdf: public DdfImpl {
+
+private:
+    std::shared_ptr<const DdfImpl> source, dest;
+    static float magic_compute_max_pdf(const DdfImpl* source, const DdfImpl* dest);
+
+public:
+
+    SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest);
+
+    virtual float value( glm::vec3 x ) const override {
+        return source->value(x) * dest->value(x);
+    }
+
+    virtual glm::vec3 trySample() const override;
+};
+
+// TODO Indicate somehow that trySample should always succeed!
+struct UnionDdf: public Ddf {
+    std::vector< std::shared_ptr<const Ddf> > components;
+    UnionDdf(){
+        full_theoretical_weight = 0.0f;
+    }
+    // weight eqals to sum of weights
+    virtual glm::vec3 trySample() const override;
+};
 
 SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest) {
 
@@ -129,7 +144,16 @@ vec3 UnionDdf::trySample() const {
     return res;
 }
 
+}//namespace detail
+
 std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const Ddf> b){
+
+    using namespace ::detail;
+
+    if(a==nullptr)
+        return unite(std::make_shared<UnionDdf>(), b);
+    else if(b==nullptr)
+        return unite(std::make_shared<UnionDdf>(), a);
 
     const UnionDdf* ua = dynamic_cast<const UnionDdf*>(a.get());
     const UnionDdf* ub = dynamic_cast<const UnionDdf*>(b.get());
@@ -168,6 +192,8 @@ std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const D
 
 // NB res and args can be null!
 std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest){
+
+    using namespace ::detail;
 
     if(!source)
         return dest;

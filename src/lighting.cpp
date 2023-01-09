@@ -1,30 +1,14 @@
 #include "lighting.h"
 
 #include "geometric_utils.h"
-
-#include <random>
+#include "randf.h"
 
 using namespace glm;
 using namespace std;
 
 light_intersection Lighting::last_sample;
 
-// TODO deduplicate
-static struct{
-    std::random_device rdev;
-    std::mt19937 gen = std::mt19937(rdev());
-
-    std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
-
-    float operator()() {
-        float res = dist(gen);
-        while(res==1.0f)
-            res = dist(gen);
-        return res;
-    }
-} randf;
-
-class LightToDistribution: public DdfImpl {
+class LightToDistribution: public ::detail::DdfImpl {
     // TODO Think about this
     friend class Superposition;
 private:
