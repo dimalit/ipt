@@ -1,8 +1,6 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 
-#include "sampling_fwd.h"
-
 #include <glm/vec3.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/ext/matrix_transform.hpp>

@@ -12,10 +12,10 @@ class LightToDistribution: public ::detail::DdfImpl {
     // TODO Think about this
     friend class Superposition;
 private:
-    const LightImpl* light;
+    const Light* light;
     glm::vec3 origin;
 public:
-    LightToDistribution(const LightImpl* light, glm::vec3 origin) {
+    LightToDistribution(const Light* light, glm::vec3 origin) {
         this->full_theoretical_weight = light->power / pow(length(origin-light->position), 2);
         this->light = light;
         this->origin = origin;
@@ -47,9 +47,7 @@ float LightToDistribution::value( glm::vec3 direction ) const {
 }
 
 std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
-    const LightImpl* cast = dynamic_cast<const LightImpl*>(this);
-    assert(cast);
-    return std::make_shared<const LightToDistribution>(cast, pos);
+    return std::make_shared<const LightToDistribution>(this, pos);
 }
 
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){

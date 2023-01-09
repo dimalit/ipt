@@ -2,7 +2,6 @@
 #define LIGHTING_H
 
 #include "sampling.h"
-
 #include "tracer_interfaces.h"
 
 struct Light {
@@ -11,15 +10,11 @@ struct Light {
     float power;
     float area;
     glm::vec3 position;
-};
 
-struct LightImpl: public Light {
     virtual light_intersection sample() const = 0;
 };
 
-class AreaLight: public LightImpl {
-    // TODO Think about this
-    friend class Superposition;
+class AreaLight: public Light {
 public:
     enum type_t {TYPE_DIAMOND, TYPE_TRIANLE};
 private:
@@ -32,7 +27,7 @@ public:
     virtual light_intersection sample() const override;
 };
 
-class PointLight:public LightImpl {
+class PointLight:public Light {
 public:
     PointLight(glm::vec3 origin, float power){
         this->position = origin;
@@ -47,7 +42,7 @@ public:
     virtual light_intersection sample() const override;
 };
 
-struct SphereLight: public LightImpl {
+struct SphereLight: public Light {
     float radius;
     SphereLight(glm::vec3 origin, float power, float radius){
         this->position = origin;

@@ -6,7 +6,7 @@
 #include <vector>
 
 struct LightingImpl: public Lighting {
-    std::vector<std::shared_ptr<const LightImpl>> lights;
+    std::vector<std::shared_ptr<const Light>> lights;
     virtual std::shared_ptr<const Ddf> distributionInPoint(glm::vec3 pos) const;
     virtual std::optional<light_intersection> traceRayToLight(glm::vec3 origin, glm::vec3 direction) const;
 };
