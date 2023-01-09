@@ -167,7 +167,7 @@ std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const D
 }
 
 // NB res and args can be null!
-std::shared_ptr<const Ddf> apply(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest){
+std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest){
 
     if(!source)
         return dest;
@@ -183,7 +183,7 @@ std::shared_ptr<const Ddf> apply(std::shared_ptr<const Ddf> source, std::shared_
             // TODO do this algorithm nicer?!
             std::shared_ptr<const Ddf> res = std::make_shared<UnionDdf>();
             for( std::shared_ptr<const Ddf> c: u_source->components ){
-                std::shared_ptr<const Ddf> sup = apply(c, dest);
+                std::shared_ptr<const Ddf> sup = chain(c, dest);
                 res = unite(res, sup);
             }// for
             return res;

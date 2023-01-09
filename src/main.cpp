@@ -116,7 +116,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
-            shared_ptr<const Ddf> combined_ddf = ::apply(light_ddf, si->sdf);
+            shared_ptr<const Ddf> combined_ddf = ::chain(light_ddf, si->sdf);
             vec3 light_direction = combined_ddf->trySample();
 
             if( light_direction == vec3()){

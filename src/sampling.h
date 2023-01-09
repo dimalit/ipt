@@ -1,13 +1,13 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 
-#include <memory>
+#include "sampling_fwd.h"
 
 #include <glm/vec3.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "sampling_fwd.h"
+#include <memory>
 
 struct Ddf {
 
@@ -98,6 +98,6 @@ public:
 };
 
 extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a, std::shared_ptr<const Ddf> b);
-extern std::shared_ptr<const Ddf> apply(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest);
+extern std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest);
 
 #endif // SAMPLING_H
