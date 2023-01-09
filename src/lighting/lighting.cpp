@@ -1,12 +1,30 @@
 #include "lighting.h"
 
-#include "geometric_utils.h"
-#include "randf.h"
+#include <randf.h>
 
 using namespace glm;
 using namespace std;
 
 light_intersection Lighting::last_sample;
+
+// NB Although this is duplicated code, it allows to break dependency from main project
+static float intersection_with_sphere(float radius, vec3 origin, vec3 direction){
+    //|origin + direction*t| = radius
+    //(o+d*t)*(o+d*t)=r^2
+    // o^2 + 2*o*d*t + d^2*t^2 = r^2
+    // desc = (2od)^2 - 4*d^2*(o^2-r^2)
+    // res = (-2od +- sqrt(desc)) / (2d^2)
+    float desc = 4.0f*pow(dot(origin, direction), 2.0f) - 4.0f*dot(direction,direction)*(dot(origin,origin)-radius*radius);
+    if(desc < 0.0f)
+        return std::numeric_limits<float>::infinity();
+    float t1 = (-2.0*dot(origin, direction) - sqrt(desc)) / 2.0 / dot(direction, direction);
+    float t2 = (-2.0*dot(origin, direction) + sqrt(desc)) / 2.0 / dot(direction, direction);
+    if(t1<0.0f)
+        t1 = std::numeric_limits<float>::infinity();
+    if(t2<0.0f)
+        t2 = std::numeric_limits<float>::infinity();
+    return std::min(t1, t2);
+}
 
 class LightToDistribution: public ::detail::DdfImpl {
     // TODO Think about this

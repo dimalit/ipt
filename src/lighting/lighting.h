@@ -1,8 +1,8 @@
 #ifndef LIGHTING_H
 #define LIGHTING_H
 
-#include "sampling/sampling.h"
-#include "tracer_interfaces.h"
+#include <sampling/sampling.h>
+#include <tracer_interfaces.h>
 
 struct Light {
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const = 0;

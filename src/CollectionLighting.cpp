@@ -1,6 +1,6 @@
 #include "CollectionLighting.h"
 
-#include "lighting.h"
+#include "lighting/lighting.h"
 
 #include "sampling/ddf.h"
 

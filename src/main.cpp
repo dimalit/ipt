@@ -1,8 +1,8 @@
-#include "randf.h"
-#include "sampling/ddf.h"
 #include "CollectionLighting.h"
-#include "geometry.h"
+#include "GeometrySphereInBox.h"
+#include <sampling/ddf.h>
 #include "tracer_interfaces.h"
+#include <randf.h>
 
 #include <glm/geometric.hpp>
 
@@ -165,7 +165,7 @@ int main(){
     // radiates forward
     lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
-    Geometry* geometry = new SphereInBox();
+    Geometry* geometry = new GeometrySphereInBox();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
