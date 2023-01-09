@@ -1,5 +1,8 @@
+#include "GridRenderPlane.h"
+#include "SimpleCamera.h"
 #include "CollectionLighting.h"
 #include "GeometrySphereInBox.h"
+
 #include <sampling/ddf.h>
 #include "tracer_interfaces.h"
 #include <randf.h>
@@ -13,55 +16,6 @@
 
 using namespace glm;
 using namespace std;
-
-struct GridRenderPlane: public RenderPlane {
-    vector<float> pixels;
-    vector<size_t> pixel_counters;
-    size_t width, height;
-    float max_value = 0;
-
-    GridRenderPlane(size_t width, size_t height){
-        this->width = width;
-        this->height = height;
-        pixels.resize(width*height);
-        pixel_counters.resize(width*height);
-    }
-    virtual void addRay(float x, float y, float value) override {
-        assert(x >= 0.0f && x < 1.0f);
-        assert(y >= 0.0f && y < 1.0f);
-        assert(value >= 0.0f);
-
-        size_t xi = x*width;
-        size_t yi = height-y*height-1;
-        pixels[yi*width+xi] =
-                (pixels[yi*width+xi]*pixel_counters[yi*width+xi]+value)
-                /
-                (pixel_counters[yi*width+xi]+1);
-        ++pixel_counters[yi*width+xi];
-        if(pixels[yi*width+xi] > max_value)
-            max_value = pixels[yi*width+xi];
-    }
-};
-
-struct SimpleCamera: public Camera {
-    glm::vec3 position;
-    glm::vec3 direction;
-
-    SimpleCamera(glm::vec3 position, glm::vec3 direction){
-        this->position = position;
-        this->direction = direction;
-    }
-
-    virtual std::pair<glm::vec3, glm::vec3> sampleRay(float x, float y) const override {
-        x -= 0.5f;
-        y -= 0.5f;
-        vec3 right = normalize(cross(direction, vec3(0.0f, 0.0f, 1.0f)));
-        vec3 up = normalize(cross(right, direction));
-
-        vec3 ray = right*x + up*y + direction;
-        return {position, normalize(ray)};
-    }
-};
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     for(size_t sample=0; sample<n_samples; ++sample){
@@ -156,7 +110,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
 int main(){
 
-    CollectionLighting* lighting = new CollectionLighting();
+    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
     lighting->addPointLight(vec3{0.9f, 0.0f, -0.6f}, 1.0f);
     // TODO Why it has non-proportional power?
     lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.60f}, 0.1f, 1.0f);
@@ -165,12 +119,12 @@ int main(){
     // radiates forward
     lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
-    Geometry* geometry = new GeometrySphereInBox();
+    shared_ptr<GeometrySphereInBox> geometry = make_shared<GeometrySphereInBox>();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
-    SimpleCamera* camera = new SimpleCamera( camera_pos, camera_dir );
+    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
 
-    Scene scene{std::shared_ptr<const Geometry>(geometry), std::shared_ptr<const Lighting>(lighting), std::shared_ptr<const Camera>(camera)};
+    Scene scene{geometry, lighting, camera};
 
     GridRenderPlane r_plane(640, 640);
 
