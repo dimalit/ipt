@@ -1,0 +1,4 @@
+C++ linting:
+ - check that #included all and only used things
+ - test coverage
+ - naming convention
