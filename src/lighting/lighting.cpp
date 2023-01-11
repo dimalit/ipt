@@ -58,12 +58,6 @@ glm::vec3 LightToDistribution::trySample() const {
         float decay = pow(distance, 2);
         float min_decay = pow(light->minDistanceTo(origin), 2);
 
-        // TODO implement quadratic attenuation of point light more nicely
-        // if singular
-        if(this->max_value == numeric_limits<float>::infinity()){
-            min_decay = 1.0f;
-        }
-
         if( randf() <= cosinus*min_decay/decay )
             break;
 //        else

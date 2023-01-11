@@ -191,7 +191,7 @@ void test_singulars(){
     shared_ptr<const Ddf> mirror = make_shared<MirrorDdf>();
     assert(mirror->trySample()==vec3(0.0f, 0.0f, 1.0f));
 
-    PointLight p_light(vec3(0.0f, 0.0f, 1.0f));
+    PointLight p_light(vec3(0.0f, 0.0f, 1.0f), 0.1f);
     assert(p_light.area==0);
     assert(p_light.sample().position==vec3(0.0f, 0.0f, 1.0f));
 

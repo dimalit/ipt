@@ -30,10 +30,13 @@ public:
 };
 
 class PointLight:public Light {
+private:
+    float virtual_radius;
 public:
-    PointLight(glm::vec3 origin, float power=1.0f){
+    PointLight(glm::vec3 origin, float virtual_radius, float power=1.0f){
         this->position = origin;
         this->power = power;
+        this->virtual_radius = virtual_radius;
         area = 0.0f;
     }
 
@@ -43,8 +46,9 @@ public:
 
     virtual light_intersection sample() const override;
 
-    virtual float minDistanceTo(glm::vec3 point) const override {
-        return length(position-point);
+    virtual float minDistanceTo(glm::vec3) const override {
+        // TODO implement quadratic attenuation of point light more nicely
+        return virtual_radius;
     }
 };
 

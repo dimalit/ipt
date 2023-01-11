@@ -38,7 +38,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);
 
             // light is our 1st priority!
-            if(li.has_value()){
+            if(li.has_value() && depth==1){
                 // if not obscured by geometry
                 if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
                     //if(depth>0)
@@ -118,9 +118,9 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-    lighting->addPointLight(vec3{0.9f, 0.0f, -0.6f}, 1.0f);
+    lighting->addPointLight(vec3{0.9f, 0.0f, -0.8f}, 0.1f, 100.0f);
     // TODO Why it has non-proportional power?
-    lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.60f}, 0.1f, 1.0f);
+    lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.8f}, 0.1f, 20.0f);
     // radiates down
     lighting->addAreaLight(vec3{-0.1f, +0.8f-0.1f, -0.6f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
     // radiates forward
@@ -135,12 +135,12 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 10);//*r_plane.width*r_plane.height);
+    render(scene, r_plane, 100);//*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
 //    r_plane.smooth(2);
-    //r_plane.computeSmoothedMax(2);
+    r_plane.computeSmoothedMax(2);
 
     cout << "Smoothed max = " << r_plane.max_value << endl;
 

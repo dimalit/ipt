@@ -30,8 +30,8 @@ optional<light_intersection> CollectionLighting::traceRayToLight(glm::vec3 origi
     return res;
 }
 
-void CollectionLighting::addPointLight(vec3 position, float power){
-    lights.push_back(make_shared<const PointLight>(position, power));
+void CollectionLighting::addPointLight(vec3 position, float virtual_radius, float power){
+    lights.push_back(make_shared<const PointLight>(position, virtual_radius, power));
 }
 void CollectionLighting::addSphereLight(vec3 position, float radius, float power){
     lights.push_back(make_shared<const SphereLight>(position, radius, power));
