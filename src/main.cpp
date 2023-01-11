@@ -21,8 +21,10 @@ using namespace std;
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     for(size_t sample=0; sample<n_samples; ++sample){
 
-        float x = randf();
-        float y = randf();
+//        float x = randf();
+//        float y = randf();
+        for(float y = 0.5f/640; y < 1; y+=1.0f/640){
+        for(float x = 0.5f/640; x < 1; x+=1.0f/640){
 
         vec3 origin, direction;
         tie(origin, direction) = scene.camera->sampleRay(x, y);
@@ -100,8 +102,13 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
         // rays that fell above depth limit are just ignored
 
-        if((sample+1) % 10000 == 0)
-            cout << (sample+1)/1000 << "k / " << n_samples/1000 << "k" << endl;
+//        if((sample+1) % 10000 == 0)
+//            cout << (sample+1)/1000 << "k / " << n_samples/1000 << "k" << endl;
+
+
+        }}// for x y
+
+        cout << sample << " / " << n_samples << endl;
 
     }// for sample
 }
@@ -126,9 +133,14 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 5*r_plane.width*r_plane.height);
+    render(scene, r_plane, 10);//*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
+
+//    r_plane.smooth(2);
+    //r_plane.computeSmoothedMax(2);
+
+    cout << "Smoothed max = " << r_plane.max_value << endl;
 
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);

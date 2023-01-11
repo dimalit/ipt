@@ -12,6 +12,8 @@ struct GridRenderPlane: public RenderPlane {
     float max_value = 0;
 
     GridRenderPlane(size_t width, size_t height);
+    void smooth(size_t side);
+    void computeSmoothedMax(size_t side);
     virtual void addRay(float x, float y, float value);
 };
 #endif // GRIDRENDERPLANE_H
