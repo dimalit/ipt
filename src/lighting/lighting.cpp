@@ -37,6 +37,9 @@ public:
         this->full_theoretical_weight = light->power;
         this->light = light;
         this->origin = origin;
+        // TODO check specific light types elsewhere!
+        if(dynamic_cast<const PointLight*>(light))
+            this->max_value = std::numeric_limits<float>::infinity();
     }
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;

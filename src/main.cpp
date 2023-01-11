@@ -126,7 +126,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 50*r_plane.width*r_plane.height);
+    render(scene, r_plane, 5*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 

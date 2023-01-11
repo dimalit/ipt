@@ -31,7 +31,7 @@ public:
 
 class PointLight:public Light {
 public:
-    PointLight(glm::vec3 origin, float power){
+    PointLight(glm::vec3 origin, float power=1.0f){
         this->position = origin;
         this->power = power;
         area = 0.0f;
@@ -50,7 +50,7 @@ public:
 
 struct SphereLight: public Light {
     float radius;
-    SphereLight(glm::vec3 origin, float radius, float power){
+    SphereLight(glm::vec3 origin, float radius, float power=1.0f){
         this->position = origin;
         this->power = power;
         this->radius = radius;

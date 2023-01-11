@@ -87,6 +87,7 @@ SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shar
     dest   = std::dynamic_pointer_cast<const DdfImpl>(_dest);
 
     assert(source && dest);
+    assert(!source->isSingular() || !dest->isSingular());
     // this limits applying SuperpositionDdf recursively!
     assert(!isnan(dest->max_value));
 
