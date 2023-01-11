@@ -4,3 +4,4 @@ C++ linting:
  - naming convention
  - copy ctror dtor move ctor operators etc
  - override
+ - find duplication like in polar2vec()

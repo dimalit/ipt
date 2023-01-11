@@ -1,8 +1,8 @@
 #include "GeometrySphereInBox.h"
 
-#include "sampling/sampling.h"
-
 #include "geometric_utils.h"
+
+#include <sampling/sampling.h>
 
 using namespace glm;
 using namespace std;

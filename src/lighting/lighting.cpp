@@ -34,7 +34,7 @@ private:
     glm::vec3 origin;
 public:
     LightToDistribution(const Light* light, glm::vec3 origin) {
-        this->full_theoretical_weight = light->power / pow(length(origin-light->position), 2);
+        this->full_theoretical_weight = light->power;
         this->light = light;
         this->origin = origin;
     }
@@ -45,11 +45,14 @@ public:
 glm::vec3 LightToDistribution::trySample() const {
     light_intersection inter = light->sample();
     Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
-    glm::vec3 dir = glm::normalize(inter.position-origin);
+    glm::vec3 dir = normalize(inter.position-origin);
     float cosinus = dot(inter.normal, -dir);
     if(cosinus <= 0.0f)               // if facing back
         return glm::vec3();
-    return randf() <= cosinus ? dir : vec3();
+    float distance = length(inter.position-origin);
+    float decay = pow(distance, 2);
+    float min_decay = pow(light->minDistanceTo(origin), 2);
+    return randf() <= cosinus*min_decay/decay ? dir : vec3();
 }
 
 float LightToDistribution::value( glm::vec3 direction ) const {
@@ -58,10 +61,10 @@ float LightToDistribution::value( glm::vec3 direction ) const {
         return 0.0f;
     glm::vec3 dir = glm::normalize(inter->position-origin);
     float cosinus = dot(inter->normal, -dir);
-    assert(cosinus > -1e-6);
+    assert(cosinus > -1e-5);
     if(cosinus<0.0f)
-        cosinus = 0.0f;
-    return cosinus;
+        return 0.0f;
+    return 1.0f;
 }
 
 std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
@@ -77,6 +80,7 @@ AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t 
     float full_area = length(cross(x_axis, y_axis));
     area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
 }
+
 light_intersection AreaLight::sample() const {
     float u1 = randf();
     float u2 = randf() * (type==TYPE_TRIANLE ? 1.0f-u1 : 1.0f );
@@ -130,6 +134,27 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     res.surface_power = this->power/this->area;
 
     return res;
+}
+
+float AreaLight::minDistanceTo(vec3 point) const {
+    // TODO how to handle case when point is behinf ligt direction?
+    vec3 normal = normalize(cross(x_axis, y_axis));
+    optional<light_intersection> inter = traceRay(point, -normal);
+    float min_distance = numeric_limits<float>::infinity();
+    if(inter.has_value())
+        min_distance = length(inter->position-point);
+
+    float corner_distance = length(position-point);
+    min_distance = std::min(min_distance, corner_distance);
+    corner_distance = length(position+x_axis-point);
+    min_distance = std::min(min_distance, corner_distance);
+    corner_distance = length(position+y_axis-point);
+    min_distance = std::min(min_distance, corner_distance);
+    if(type==TYPE_DIAMOND){
+        corner_distance = length(position+y_axis+y_axis-point);
+        min_distance = std::min(min_distance, corner_distance);
+    }// if diamond
+    return min_distance;
 }
 
 optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 direction) const {

@@ -13,7 +13,7 @@ bool p_hit(float prob){
 }
 
 UpperHalfDdf::UpperHalfDdf(){
-    max_value = 0.5f/M_PI;
+    max_value = 1.0f;
     full_theoretical_weight = 2.0f*M_PI; // simulate as though pdf=1
 }
 vec3 UpperHalfDdf::trySample() const {

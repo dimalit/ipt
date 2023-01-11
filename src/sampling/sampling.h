@@ -18,7 +18,8 @@ struct DdfImpl: public Ddf {
 
     // used in sampling
     // is infinity if singular
-    float max_value;
+    // must be initialized in subclasses
+    float max_value = std::numeric_limits<float>::signaling_NaN();
 
     bool isSingular() const {
         return max_value == std::numeric_limits<float>::infinity();
@@ -72,14 +73,14 @@ struct UpperHalfDdf: public detail::DdfImpl {
 
 class CosineDdf: public detail::DdfImpl {
 public:
-    CosineDdf(float w);
+    CosineDdf(float w = 1.0f);
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
 class MirrorDdf: public detail::DdfImpl {
 public:
-    MirrorDdf(float w){
+    MirrorDdf(float w = 1.0f){
         max_value = std::numeric_limits<float>::infinity();
         full_theoretical_weight = w;
     }
