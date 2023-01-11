@@ -2,6 +2,7 @@
 #include "SimpleCamera.h"
 #include "CollectionLighting.h"
 #include "GeometrySphereInBox.h"
+#include "GeometryFloor.h"
 
 #include <sampling/ddf.h>
 #include "tracer_interfaces.h"
@@ -55,30 +56,28 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             // 1 cast ray to light
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
             shared_ptr<const Ddf> combined_ddf = ::chain(light_ddf, si->sdf);
-            vec3 light_direction = combined_ddf->trySample();
 
-            if( light_direction == vec3()){
-                r_plane.addRay(x, y, 0.0f);
-            }
-            else {
+            vec3 light_direction;
+            do{
+                light_direction = combined_ddf->trySample();
+            }while( light_direction == vec3());
 
-                light_intersection light_li   = Lighting::last_sample;
-                std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
+            light_intersection light_li   = Lighting::last_sample;
+            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
 
-                // if not obscured by geometry
-                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
+            // if not obscured by geometry
+            if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
 
-                    // NB We ignore surface_power and distance as they are already included in sampling function!
-                    float cosinus = dot(light_li.normal, -light_direction);
-                    if(cosinus < 0.0f)
-                        cosinus = 0.0f;
+                // NB We ignore surface_power and distance as they are already included in sampling function!
+                float cosinus = dot(light_li.normal, -light_direction);
+                if(cosinus < 0.0f)
+                    cosinus = 0.0f;
 
-                    float value = cosinus * combined_ddf->full_theoretical_weight;
+                float value = cosinus * combined_ddf->full_theoretical_weight;
 
-                    r_plane.addRay(x, y, value);
+                r_plane.addRay(x, y, value);
 
-                }// if not obscured by geometry
-            }// if light_direction
+            }// if not obscured by geometry
 
             // 2 continue to geometry
             //DEBUG for geometry debugging
@@ -118,7 +117,7 @@ int main(){
     // radiates forward
     lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
-    shared_ptr<GeometrySphereInBox> geometry = make_shared<GeometrySphereInBox>();
+    shared_ptr<Geometry> geometry = make_shared<GeometryFloor>();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
