@@ -103,8 +103,8 @@ bool check_ddf(const Ddf& ddf){
             float theor = ddi->value(polar2vec(alpha, phi))*bucket_area(i,j)*N/ddf_integral;
             float exper = buckets[i][j];
 
-            cout << i << "\t" << j << "\t" << exper/bucket_area(i,j) << "\t"
-                 << theor/bucket_area(i,j) << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
+//            cout << i << "\t" << j << "\t" << exper/bucket_area(i,j) << "\t"
+//                 << theor/bucket_area(i,j) << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
 
             exp_counter += buckets[i][j];
             theor_counter += theor;
@@ -128,14 +128,18 @@ bool check_ddf(const Ddf& ddf){
     chi_ceil *= (400.0f-dof_skip_counter) / 100;
     cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
-    return ddf_max/ddi->max_value > 0.9 && ddf_max/ddi->max_value < 1.1 &&
-           chi2 > chi_floor && chi2 < chi_ceil;
+    return chi2 > chi_floor && chi2 < chi_ceil &&
+           (isnan(ddi->max_value) || ddf_max/ddi->max_value > 0.9 && ddf_max/ddi->max_value < 1.1);
 }
 
 void test_sampling_dffs(){
 
     cout << "UpperHalfDdf:" << endl;
     cout << (check_ddf(UpperHalfDdf()) ? "OK" : "FAIL") << endl;
+    cout << endl;
+
+    cout << "CosineDdf:" << endl;
+    cout << (check_ddf(CosineDdf()) ? "OK" : "FAIL") << endl;
     cout << endl;
 
     GeometrySphereInBox geo;
@@ -159,38 +163,33 @@ void test_sampling_dffs(){
     cout << endl;
 }
 
-void test_light_dffs(){
+void test_light_ddfs(){
 
     InvertedSphereLight isl(vec3(0.0f, 0.0f, -0.5f), 1.0f, 1.0f);
     shared_ptr<const Ddf> ild = isl.lightToPoint(vec3(0.0f, 0.0f, 0.0f));
-
-    cout << "light from outer sphere:" << endl;
+    cout << "InvertedSphereLight:" << endl;
     cout << (check_ddf(*ild) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-//    AreaLight al(vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f, 2.0f, 0.0f), vec3(2.0f, 0.0f, 0.0f), 1.0f);
-//    shared_ptr<const Ddf> ld = al.lightToPoint(vec3(0.0f, 0.0f, 0.0f));
-//    cout << "light from 2x2 square 1 above:" << endl;
-//    cout << (check_ddf(*ld) ? "OK" : "FAIL") << endl;
-//    cout << endl;
+    AreaLight al(vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f, 2.0f, 0.0f), vec3(2.0f, 0.0f, 0.0f), 1.0f);
+    shared_ptr<const Ddf> ld = al.lightToPoint(vec3(0.0f, 0.0f, 0.0f));
+    cout << "AreaLight 2x2 z=1 above:" << endl;
+    cout << (check_ddf(*ld) ? "OK" : "FAIL") << endl;
+    cout << endl;
 
-//    SphereLight sl(vec3(0.0f, 0.0f, 1.3f), 1.0f, 1.0f);
-//    shared_ptr<const Ddf> cd = make_shared<CosineDdf>();
-//    shared_ptr<const Ddf> ld = sl.lightToPoint(vec3(0.0f, 0.0f, 0.0f));
-//    shared_ptr<const Ddf> comb = chain(ld, cd);
+    SphereLight sl(vec3(0.0f, 0.0f, 1.3f), 1.0f, 1.0f);
+    shared_ptr<const Ddf> cd = make_shared<CosineDdf>();
+    shared_ptr<const Ddf> comb = chain(ld, cd);
 
-//    cout << "light from sphere:" << endl;
-//    cout << (check_ddf(*ld) ? "OK" : "FAIL") << endl;
-//    cout << endl;
-
-//    cout << "light over cosine:" << endl;
-//    cout << (check_ddf(*comb) ? "OK" : "FAIL") << endl;
-//    cout << endl;
+    cout << "SphereLight:" << endl;
+    cout << (check_ddf(*ld) ? "OK" : "FAIL") << endl;
+    cout << endl;
 }
 
 int main(){
 
-    test_light_dffs();
+    test_sampling_dffs();
+    test_light_ddfs();
 
     return 0;
 }

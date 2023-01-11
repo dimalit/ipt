@@ -43,16 +43,22 @@ public:
 };
 
 glm::vec3 LightToDistribution::trySample() const {
-    light_intersection inter = light->sample();
-    Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
-    glm::vec3 dir = normalize(inter.position-origin);
-    float cosinus = dot(inter.normal, -dir);
-    if(cosinus <= 0.0f)               // if facing back
-        return glm::vec3();
-    float distance = length(inter.position-origin);
-    float decay = pow(distance, 2);
-    float min_decay = pow(light->minDistanceTo(origin), 2);
-    return randf() <= cosinus*min_decay/decay ? dir : vec3();
+    vec3 dir;
+    for(;;){
+        light_intersection inter = light->sample();
+        Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
+        dir = normalize(inter.position-origin);
+        float cosinus = dot(inter.normal, -dir);
+        if(cosinus <= 0.0f)               // if facing back
+            return glm::vec3();
+        float distance = length(inter.position-origin);
+        float decay = pow(distance, 2);
+        float min_decay = pow(light->minDistanceTo(origin), 2);
+
+        if( randf() <= cosinus*min_decay/decay )
+            break;
+    }
+    return dir;
 }
 
 float LightToDistribution::value( glm::vec3 direction ) const {

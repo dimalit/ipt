@@ -88,7 +88,7 @@ SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shar
 
     assert(source && dest);
     // this limits applying SuperpositionDdf recursively!
-    assert(dest->max_value != std::numeric_limits<float>::quiet_NaN());
+    assert(!isnan(dest->max_value));
 
     max_value = std::numeric_limits<float>::quiet_NaN(); //magic_compute_max_pdf(source.get(), dest.get());
 
