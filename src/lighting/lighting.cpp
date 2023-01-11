@@ -60,6 +60,8 @@ glm::vec3 LightToDistribution::trySample() const {
 
         if( randf() <= cosinus*min_decay/decay )
             break;
+        else
+            return vec3();          // do not loop by now
     }
     return dir;
 }
