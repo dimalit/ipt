@@ -59,27 +59,29 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
             shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
             shared_ptr<const Ddf> combined_ddf = ::chain(light_ddf, si->sdf);
 
-            vec3 light_direction;
-            do{
-                light_direction = combined_ddf->trySample();
-            }while( light_direction == vec3());
+            vec3 light_direction = combined_ddf->trySample();
+            if( light_direction == vec3())
+                r_plane.addRay(x, y, 0.0f);
+            else {
 
-            light_intersection light_li   = Lighting::last_sample;
-            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
+                light_intersection light_li   = Lighting::last_sample;
+                std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
 
-            // if not obscured by geometry
-            if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
+                // if not obscured by geometry
+                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
 
-                // NB We ignore surface_power and distance as they are already included in sampling function!
-                float cosinus = dot(light_li.normal, -light_direction);
-                if(cosinus < 0.0f)
-                    cosinus = 0.0f;
+                    // NB We ignore surface_power and distance as they are already included in sampling function!
+                    float cosinus = dot(light_li.normal, -light_direction);
+                    if(cosinus < 0.0f)
+                        cosinus = 0.0f;
 
-                float value = cosinus * combined_ddf->full_theoretical_weight;
+                    float value = cosinus * combined_ddf->full_theoretical_weight;
 
-                r_plane.addRay(x, y, value);
+                    r_plane.addRay(x, y, value);
 
-            }// if not obscured by geometry
+                }// if not obscured by geometry
+
+            }// if light is successfull
 
             // 2 continue to geometry
             //DEBUG for geometry debugging
