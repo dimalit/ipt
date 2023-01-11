@@ -151,7 +151,7 @@ float AreaLight::minDistanceTo(vec3 point) const {
     corner_distance = length(position+y_axis-point);
     min_distance = std::min(min_distance, corner_distance);
     if(type==TYPE_DIAMOND){
-        corner_distance = length(position+y_axis+y_axis-point);
+        corner_distance = length(position+x_axis+y_axis-point);
         min_distance = std::min(min_distance, corner_distance);
     }// if diamond
     return min_distance;
