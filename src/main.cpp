@@ -40,8 +40,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
                 if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
                     //if(depth>0)
                     //    cout << "HIT" << endl;
-                    float value = dot(li->normal, -direction)*li->surface_power;
-                    r_plane.addRay(x, y, value >= 0.0f ? value*dimming_coef: 0.0f);
+                    r_plane.addRay(x, y, li->surface_power*dimming_coef);
                     break;
                 }
             }// if li
