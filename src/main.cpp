@@ -122,11 +122,11 @@ int main(){
     // TODO Why it has non-proportional power?
     lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.8f}, 0.1f, 20.0f);
     // radiates down
-    lighting->addAreaLight(vec3{-0.1f, +0.8f-0.1f, -0.6f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
+    lighting->addAreaLight(vec3{-0.1f, +0.8f-0.1f, -0.8f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
     // radiates forward
-    lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.60-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
+    lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.80-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
-    shared_ptr<Geometry> geometry = make_shared<GeometryFloor>();
+    shared_ptr<Geometry> geometry = make_shared<GeometrySphereInBox>();
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
@@ -135,7 +135,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 100);//*r_plane.width*r_plane.height);
+    render(scene, r_plane, 50);//*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
