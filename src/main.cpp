@@ -118,7 +118,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 int main(){
 
     shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-    lighting->addPointLight(vec3{0.9f, 0.0f, -0.8f}, 0.1f, 100.0f);
+    lighting->addPointLight(vec3{0.9f, 0.0f, -0.8f}, 0.1f, 1.0f);
     // TODO Why it has non-proportional power?
     lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.8f}, 0.1f, 20.0f);
     // radiates down
@@ -135,7 +135,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 50);//*r_plane.width*r_plane.height);
+    render(scene, r_plane, 5);//*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 

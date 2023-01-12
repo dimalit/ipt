@@ -46,9 +46,8 @@ public:
 
     virtual light_intersection sample() const override;
 
-    virtual float minDistanceTo(glm::vec3) const override {
-        // TODO implement quadratic attenuation of point light more nicely
-        return virtual_radius;
+    virtual float minDistanceTo(glm::vec3 point) const override {
+        return length(point-position);
     }
 };
 
