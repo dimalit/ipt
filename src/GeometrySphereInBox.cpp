@@ -30,7 +30,7 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
     }// for i
 
     float t = intersection_with_sphere(0.5f, origin, direction);
-    if(t<dist){
+    if(t>1e-6 && t<dist){
         dist = t;
         intersected_sphere = true;
         intersected_plane = -1;
