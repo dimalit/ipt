@@ -144,12 +144,12 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 50*r_plane.width*r_plane.height);
+    render(scene, r_plane, 5*r_plane.width*r_plane.height);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
-//    r_plane.smooth(2);
-    r_plane.computeSmoothedMax(2);
+    //r_plane.smooth(4);
+    //r_plane.computeSmoothedMax(4);
 
     cout << "Smoothed max = " << r_plane.max_value << endl;
 
@@ -159,7 +159,10 @@ int main(){
     float gamma = 0.6f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
-            fprintf(fp, "%d ", (int)(pow(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value, gamma)*255));
+            int value = pow(r_plane.pixels[y*r_plane.width+x]/r_plane.max_value, gamma)*255;
+            if(value>255)
+                value = 255;
+            fprintf(fp, "%d ", value);
         }
         fprintf(fp, "\n");
     }// for y
