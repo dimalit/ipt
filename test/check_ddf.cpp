@@ -7,6 +7,8 @@
 using namespace glm;
 using namespace std;
 
+// TODO This whole file is duplicated. It's better then duplicate just lines of code, but maybe do something with it.
+
 vec3 polar2vec(float alpha, float phi){
     float r = sin(alpha);
     return vec3(r*cos(phi), r*sin(phi), cos(alpha));
