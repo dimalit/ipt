@@ -49,7 +49,7 @@ float CosineDdf::value( vec3 arg ) const {
     // TODO function for this like clip()?
     if(arg.z < 0.0f)
         return 0.0f;
-    return 1.0f/M_PI*arg.z;
+    return arg.z;
 }
 
 namespace detail {
