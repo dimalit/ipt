@@ -33,6 +33,7 @@ class PointLight:public Light {
 private:
     float virtual_radius;
 public:
+    // TODO Maybe remove virtual_radius (not needed anymore)
     PointLight(glm::vec3 origin, float virtual_radius, float power=1.0f){
         this->position = origin;
         this->power = power;

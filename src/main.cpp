@@ -32,7 +32,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         // ray bouncing loop
         // with hard-limited depth
         float dimming_coef = 1.0f;
-        for(size_t depth=0; depth<2; ++depth){
+        for(size_t depth=0; depth<3; ++depth){
 
             std::optional<surface_intersection> si = scene.geometry->traceRay(origin, direction);
             std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);

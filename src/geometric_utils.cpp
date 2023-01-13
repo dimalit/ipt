@@ -20,6 +20,8 @@ float intersection_with_box_plane(vec3 plane, vec3 origin, vec3 direction){
     // exclude back face
     if(dot(direction, plane) < 0.0f)
         return std::numeric_limits<float>::infinity();
+    if(t<1e-6)
+        return std::numeric_limits<float>::infinity();
     return t;
 }
 
@@ -34,11 +36,16 @@ float intersection_with_sphere(float radius, vec3 origin, vec3 direction){
         return std::numeric_limits<float>::infinity();
     float t1 = (-2.0*dot(origin, direction) - sqrt(desc)) / 2.0 / dot(direction, direction);
     float t2 = (-2.0*dot(origin, direction) + sqrt(desc)) / 2.0 / dot(direction, direction);
-    if(t1<0.0f)
+    if(t1<1e-6)
         t1 = std::numeric_limits<float>::infinity();
-    if(t2<0.0f)
+    if(t2<1e-6)
         t2 = std::numeric_limits<float>::infinity();
-    return std::min(t1, t2);
+    float t = std::min(t1, t2);
+
+    vec3 pos = origin + direction*t;
+    if(dot(pos, origin-pos) <= 0.0f)
+        return std::numeric_limits<float>::infinity();
+    return t;
 }
 
 // TODO Probably not needed
