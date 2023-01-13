@@ -41,3 +41,8 @@ void CollectionLighting::addAreaLight(vec3 corner, vec3 normal, vec3 x_side, flo
     shared_ptr<const Light> light = make_shared<const AreaLight>(corner, x_side, y_side, power);
     lights.push_back(light);
 }
+
+void CollectionLighting::addOuterLight(float radius, float power){
+    shared_ptr<const Light> light = make_shared<InvertedSphereLight>(vec3(), radius, power);
+    lights.push_back(light);
+}

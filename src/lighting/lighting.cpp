@@ -25,8 +25,12 @@ static float intersection_with_sphere(float radius, vec3 origin, vec3 direction)
         t2 = std::numeric_limits<float>::infinity();
     float t = std::min(t1, t2);
 
+    // discard back-face intersections
     vec3 pos = origin + direction*t;
-    if(dot(pos, origin-pos) <= 0.0f)
+    vec3 outer_normal = normalize(pos);
+    float direction_sign = dot(outer_normal, origin-pos);   // >0 for outer rays
+    float position_sign  = length(origin) - radius;         // >0 for outer rays
+    if( direction_sign * position_sign <= 0.0f)
         return std::numeric_limits<float>::infinity();
     return t;
 }
