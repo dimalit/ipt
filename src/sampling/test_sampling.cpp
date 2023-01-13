@@ -9,6 +9,37 @@
 using namespace glm;
 using namespace std;
 
+const float EPS=1e-6;
+
+bool eq(float a, float b){
+    return abs(a-b) < EPS;
+}
+
+void test_ddf_basic(){
+    UpperHalfDdf ud;
+    assert(eq(ud.full_theoretical_weight,2.0f*M_PI));
+    assert(ud.max_value==1.0f);
+    assert(!ud.isSingular());
+
+    assert(ud.value(vec3())==1.0f);
+    assert(ud.value(normalize(vec3(1,1,1)))==1.0f);
+    assert(ud.value(normalize(vec3(1,1,-1)))==0.0f);
+
+    CosineDdf cd(0.5f);
+    assert(cd.full_theoretical_weight==0.5f);
+    assert(eq(cd.max_value, 1.0f/M_PI));
+    assert(!cd.isSingular());
+
+    assert(eq(cd.value(vec3(0,0,1)),1.0f));
+    assert(eq(cd.value(vec3(1,0,EPS/10.0f)),0.0f));
+    assert(cd.value(normalize(vec3(1,1,-1)))==0.0f);
+
+    MirrorDdf md(0.5f);
+    assert(md.full_theoretical_weight==0.5f);
+    assert(isinf(md.max_value));
+    assert(md.isSingular());
+}
+
 void test_sampling_ddfs(){
 
     cout << "UpperHalfDdf:" << endl;
@@ -41,6 +72,6 @@ void test_sampling_ddfs(){
 }
 
 int main(){
-    test_sampling_ddfs();
+    test_ddf_basic();
     return 0;
 }
