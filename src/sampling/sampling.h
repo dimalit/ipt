@@ -28,6 +28,33 @@ struct DdfImpl: public Ddf {
 
 }// namespace
 
+struct UpperHalfDdf: public detail::DdfImpl {
+    UpperHalfDdf();
+    virtual glm::vec3 trySample() const override;
+    virtual float value( glm::vec3 arg ) const override;
+};
+
+class CosineDdf: public detail::DdfImpl {
+public:
+    CosineDdf(float w = 1.0f);
+    virtual glm::vec3 trySample() const override;
+    virtual float value( glm::vec3 arg ) const override;
+};
+
+class MirrorDdf: public detail::DdfImpl {
+public:
+    MirrorDdf(float w = 1.0f){
+        max_value = std::numeric_limits<float>::infinity();
+        full_theoretical_weight = w;
+    }
+    virtual glm::vec3 trySample() const override {
+        return glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+    virtual float value( glm::vec3 arg ) const override {
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+};
+
 // TODO hide t from interface?
 struct TransformDdf: public detail::DdfImpl {
     std::shared_ptr<const detail::DdfImpl> origin;
@@ -63,33 +90,6 @@ struct RotateDdf: public TransformDdf {
             axis = glm::vec3(1.0f, 0.0f, 0.0f);
         float cosinus = dot(z,to);
         transformation = rotate(glm::identity<glm::mat4>(), (float)acos(cosinus), axis);
-    }
-};
-
-struct UpperHalfDdf: public detail::DdfImpl {
-    UpperHalfDdf();
-    virtual glm::vec3 trySample() const override;
-    virtual float value( glm::vec3 arg ) const override;
-};
-
-class CosineDdf: public detail::DdfImpl {
-public:
-    CosineDdf(float w = 1.0f);
-    virtual glm::vec3 trySample() const override;
-    virtual float value( glm::vec3 arg ) const override;
-};
-
-class MirrorDdf: public detail::DdfImpl {
-public:
-    MirrorDdf(float w = 1.0f){
-        max_value = std::numeric_limits<float>::infinity();
-        full_theoretical_weight = w;
-    }
-    virtual glm::vec3 trySample() const override {
-        return glm::vec3(0.0f, 0.0f, 1.0f);
-    }
-    virtual float value( glm::vec3 arg ) const override {
-        return std::numeric_limits<float>::quiet_NaN();
     }
 };
 
