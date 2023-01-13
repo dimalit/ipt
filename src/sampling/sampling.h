@@ -38,6 +38,7 @@ struct TransformDdf: public detail::DdfImpl {
         this->transformation = transformation;
         // XXX best-guess
         this->max_value = dynamic_cast<const detail::DdfImpl*>(origin.get())->max_value;
+        this->full_theoretical_weight = origin->full_theoretical_weight;
     }
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
