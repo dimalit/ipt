@@ -19,6 +19,36 @@
 using namespace glm;
 using namespace std;
 
+float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
+
+    if(depth==4)
+        return 0.0f;
+
+    std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
+    std::optional<light_intersection> li   = lighting.traceRayToLight(origin, direction);
+
+    // 1 check light hit
+    if(li.has_value() && depth>0){
+        // if not obscured by geometry
+        if(!si.has_value() || length(si->position-origin) > length(li->position-origin))
+            return li->surface_power;
+    }// if li
+
+    if(!si.has_value())
+        return 0.0f;
+
+    // 2 continue to geometry
+    //DEBUG for geometry debugging
+    //return si->position.y+1.0f;
+
+    vec3 new_direction = si->sdf->trySample();
+
+    if(new_direction == vec3())
+        return 0.0f;            // possible dimming because of this
+
+    return si->sdf->full_theoretical_weight * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+}
+
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     for(size_t sample=0; sample<n_samples; ++sample){
 
@@ -30,87 +60,43 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         vec3 origin, direction;
         tie(origin, direction) = scene.camera->sampleRay(x, y);
 
-        // ray bouncing loop
+        // ray bouncing recursion
         // with hard-limited depth
-        float dimming_coef = 1.0f;
-        size_t depth=0;
-        for(; depth<3; ++depth){
+        r_plane.addRay(x, y, ray_power(*scene.geometry, *scene.lighting, origin, direction));
 
-            std::optional<surface_intersection> si = scene.geometry->traceRay(origin, direction);
-            std::optional<light_intersection> li   = scene.lighting->traceRayToLight(origin, direction);
-
-            // light is our 1st priority!
-            if(li.has_value() && depth>0){
-                // if not obscured by geometry
-                if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
-                    //if(depth>0)
-                    //    cout << "HIT" << endl;
-                    r_plane.addRay(x, y, li->surface_power*dimming_coef);
-                    break;
-                }
-            }// if li
-
-            if(!si.has_value()){
-                r_plane.addRay(x, y, 0.0f);
-                break;
-            }
-
-            // geometry hit
+        // geometry hit
 /*
-            // 1 cast ray to light
-            shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
-            shared_ptr<const Ddf> combined_ddf = ::chain(light_ddf, si->sdf);
+        // 1 cast ray to light
+        shared_ptr<const Ddf> light_ddf = scene.lighting->distributionInPoint(si->position);
+        shared_ptr<const Ddf> combined_ddf = ::chain(light_ddf, si->sdf);
 
-            vec3 light_direction = combined_ddf->trySample();
-            if( light_direction == vec3())
-                r_plane.addRay(x, y, 0.0f);
-            else {
-
-                light_intersection light_li   = Lighting::last_sample;
-                std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
-
-                // if not obscured by geometry
-                if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
-
-                    // NB We ignore surface_power and distance as they are already included in sampling function!
-                    float cosinus = dot(light_li.normal, -light_direction);
-                    if(cosinus < 0.0f)
-                        cosinus = 0.0f;
-
-                    float value = cosinus * combined_ddf->full_theoretical_weight;
-
-                    r_plane.addRay(x, y, value);
-
-                }// if not obscured by geometry
-
-            }// if light is successfull
-*/
-            // 2 continue to geometry
-            //DEBUG for geometry debugging
-            //r_plane.addRay(x, y, si->position.y+1.0f);
-            //break;
-
-            vec3 new_direction = si->sdf->trySample();
-
-            if(new_direction == vec3()){
-                r_plane.addRay(x, y, 0.0f);
-                break;
-            }
-
-            origin = si->position;
-            direction = new_direction;
-            dimming_coef *= si->sdf->full_theoretical_weight;
-            continue;
-
-        }// ray bouncing loop
-
-        // rays that fell above depth limit are black!
-        if(depth==3)
+        vec3 light_direction = combined_ddf->trySample();
+        if( light_direction == vec3())
             r_plane.addRay(x, y, 0.0f);
+        else {
+
+            light_intersection light_li   = Lighting::last_sample;
+            std::optional<surface_intersection> light_si = scene.geometry->traceRay(si->position, light_direction);
+
+            // if not obscured by geometry
+            if(!light_si.has_value() || length(light_si->position-si->position) > length(light_li.position-si->position)){
+
+                // NB We ignore surface_power and distance as they are already included in sampling function!
+                float cosinus = dot(light_li.normal, -light_direction);
+                if(cosinus < 0.0f)
+                    cosinus = 0.0f;
+
+                float value = cosinus * combined_ddf->full_theoretical_weight;
+
+                r_plane.addRay(x, y, value);
+
+            }// if not obscured by geometry
+
+        }// if light is successfull
+*/
 
         if((sample+1) % 10000 == 0)
             cout << (sample+1)/1000 << "k / " << n_samples/1000 << "k" << endl;
-
 
 //        }}// for x y
 
