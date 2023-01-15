@@ -58,7 +58,7 @@ struct SphereLight: public Light {
         this->position = origin;
         this->power = power;
         this->radius = radius;
-        area = 4.0 * M_PI * radius;
+        area = 4.0 * M_PI * radius*radius;
     }
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
     virtual light_intersection sample() const override;
