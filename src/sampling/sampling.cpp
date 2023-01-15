@@ -7,6 +7,7 @@
 #include <algorithm>
 
 using namespace glm;
+using namespace std;
 
 bool p_hit(float prob){
     return randf() < prob;
@@ -72,13 +73,14 @@ public:
 };
 
 // TODO Indicate somehow that trySample should always succeed!
-struct UnionDdf: public Ddf {
+struct UnionDdf: public DdfImpl {
     std::vector< std::shared_ptr<const Ddf> > components;
     UnionDdf(){
         full_theoretical_weight = 0.0f;
     }
     // weight eqals to sum of weights
     virtual glm::vec3 trySample() const override;
+    virtual float value( vec3 arg ) const;
 };
 
 SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest) {
@@ -144,6 +146,16 @@ vec3 UnionDdf::trySample() const {
     assert(r<acc);
     return res;
 }
+
+float UnionDdf::value( vec3 arg ) const {
+    float res = 0.0f;
+    for(shared_ptr<const Ddf> c: this->components){
+        const DdfImpl* c_impl = dynamic_cast<const DdfImpl*>(c.get());
+        res += c->full_theoretical_weight * c_impl->value(arg);
+    }// for
+    return res;
+}
+
 
 }//namespace detail
 

@@ -58,22 +58,16 @@ public:
 
 glm::vec3 LightToDistribution::trySample() const {
     vec3 dir;
-    for(;;){
-        light_intersection inter = light->sample();
-        Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
-        dir = normalize(inter.position-origin);
-        float cosinus = dot(inter.normal, -dir);
-        if(cosinus <= 0.0f)               // if facing back
-            return glm::vec3();
-        float distance = length(inter.position-origin);
-        float decay = pow(distance, 2);
-        float min_decay = pow(light->minDistanceTo(origin), 2);
-
-        if( randf() <= cosinus*min_decay/decay )
-            break;
-//        else
-//            return vec3();          // do not loop by now
-    }
+    light_intersection inter = light->sample();
+    dir = normalize(inter.position-origin);
+    float cosinus = dot(inter.normal, -dir);
+    if(cosinus <= 0.0f)               // if facing back
+        cosinus=0.0f;
+    float distance = length(inter.position-origin);
+    float decay = pow(distance, 2);
+    // TODO maybe intersection result should depend on a type of sampling function!?
+    inter.surface_power *= cosinus/decay;
+    Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
     return dir;
 }
 
@@ -103,6 +97,7 @@ AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t 
     area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
 }
 
+// TODO Maybe use here sampling parameters to adjust surface_power?
 light_intersection AreaLight::sample() const {
     float u1 = randf();
     float u2 = randf() * (type==TYPE_TRIANLE ? 1.0f-u1 : 1.0f );
@@ -111,8 +106,7 @@ light_intersection AreaLight::sample() const {
     light_intersection res;
     res.position = pos + this->position;
     res.normal = normalize(cross(x_axis, y_axis));
-    // TODO probably remove it somehow
-    res.surface_power = std::numeric_limits<float>::signaling_NaN();
+    res.surface_power = this->power/this->area;
 
     return res;
 }
@@ -192,6 +186,7 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
     return res;
 }
 
+// TODO Maybe use here sampling parameters to adjust surface_power?
 light_intersection SphereLight::sample() const {
 
     float u1 = randf()*2.0f - 1.0f;     // -1..+1
@@ -204,12 +199,12 @@ light_intersection SphereLight::sample() const {
     light_intersection res;
     res.position = pos + this->position;
     res.normal = normalize(pos);
-    // TODO probably remove it somehow
-    res.surface_power = std::numeric_limits<float>::signaling_NaN();
+    res.surface_power = this->power/this->area;
 
     return res;
 }
 
+// TODO Maybe use here sampling parameters to adjust surface_power?
 light_intersection PointLight::sample() const {
 
     // TODO deduplicate with SphereLight
@@ -223,7 +218,6 @@ light_intersection PointLight::sample() const {
     light_intersection res;
     res.position = this->position;
     res.normal = normal;
-    // TODO probably remove it somehow
     res.surface_power = std::numeric_limits<float>::signaling_NaN();
 
     return res;
