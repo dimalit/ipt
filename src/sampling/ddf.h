@@ -12,6 +12,8 @@ struct Ddf {
     virtual glm::vec3 trySample() const = 0;
 
     float full_theoretical_weight = 1.0f;
+
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const = 0;
 };
 
 extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a = nullptr, std::shared_ptr<const Ddf> b = nullptr);

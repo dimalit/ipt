@@ -43,11 +43,17 @@ struct TransformDdf: public detail::DdfImpl {
         return transformation * x;
     }
 
-    virtual float value( glm::vec3 arg ) const {
+    virtual float value( glm::vec3 arg ) const override {
         return origin->value(inverse(transformation)*arg);
     }
 
     // TODO Need separate implementations for Continuous and Singular
+
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<TransformDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 }// namespace
@@ -56,6 +62,11 @@ struct UpperHalfDdf: public detail::DdfImpl {
     UpperHalfDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<UpperHalfDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 class CosineDdf: public detail::DdfImpl {
@@ -63,6 +74,11 @@ public:
     CosineDdf(float w = 1.0f);
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<CosineDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 class MirrorDdf: public detail::DdfImpl {
@@ -76,6 +92,11 @@ public:
     }
     virtual float value( glm::vec3 arg ) const override {
         return std::numeric_limits<float>::quiet_NaN();
+    }
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<MirrorDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
     }
 };
 

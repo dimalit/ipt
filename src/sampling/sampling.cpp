@@ -70,6 +70,12 @@ public:
     }
 
     virtual glm::vec3 trySample() const override;
+
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<SuperpositionDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 // TODO Indicate somehow that trySample should always succeed!
@@ -80,7 +86,12 @@ struct UnionDdf: public DdfImpl {
     }
     // weight eqals to sum of weights
     virtual glm::vec3 trySample() const override;
-    virtual float value( vec3 arg ) const;
+    virtual float value( vec3 arg ) const override;
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<UnionDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest) {

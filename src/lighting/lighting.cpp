@@ -54,6 +54,11 @@ public:
     }
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<LightToDistribution>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
 };
 
 glm::vec3 LightToDistribution::trySample() const {
