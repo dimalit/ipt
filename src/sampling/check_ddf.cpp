@@ -31,7 +31,7 @@ float bucket_area(size_t alpha_bucket, size_t phi_bucket){
 }
 
 bool check_ddf(const Ddf& ddf){
-    const ::detail::DdfImpl* ddi = dynamic_cast<const ::detail::DdfImpl*>(&ddf);
+    const Ddf* ddi = dynamic_cast<const Ddf*>(&ddf);
 
     // 1 compute ddf integral and max
 

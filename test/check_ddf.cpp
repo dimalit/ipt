@@ -33,8 +33,6 @@ float bucket_area(size_t alpha_bucket, size_t phi_bucket){
 }
 
 bool check_ddf(const Ddf& ddf){
-    const ::detail::DdfImpl* ddi = dynamic_cast<const ::detail::DdfImpl*>(&ddf);
-
     // 1 compute ddf integral and max
 
     float ddf_integral = 0.0f;
@@ -43,7 +41,7 @@ bool check_ddf(const Ddf& ddf){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float value = ddi->value(polar2vec(alpha, phi));
+            float value = ddf.value(polar2vec(alpha, phi));
             if(value > ddf_max)
                 ddf_max = value;
             float area = bucket_area(i, j);
@@ -62,7 +60,7 @@ bool check_ddf(const Ddf& ddf){
     for(size_t i=0; i<N; ++i){
 
         ++total_tries;
-        vec3 vec = ddi->trySample();
+        vec3 vec = ddf.trySample();
         if(vec == vec3()){
             --i;
             continue;
@@ -100,7 +98,7 @@ bool check_ddf(const Ddf& ddf){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float theor = ddi->value(polar2vec(alpha, phi))*bucket_area(i,j)*N/ddf_integral;
+            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N/ddf_integral;
             float exper = buckets[i][j];
 
 //            cout << i << "\t" << j << "\t" << exper/bucket_area(i,j) << "\t"
@@ -117,7 +115,7 @@ bool check_ddf(const Ddf& ddf){
     }
 
     cout << "DDF integral = " << ddf_integral << endl;
-    cout << "DDF max      = " << ddf_max << " / " << ddi->max_value << endl;
+    cout << "DDF max      = " << ddf_max << " / " << ddf.max_value << endl;
 
     cout << "Experimental Total = " << exp_counter << endl;
     cout << "Theoretical total  = " << theor_counter << endl;
@@ -129,5 +127,5 @@ bool check_ddf(const Ddf& ddf){
     cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
-           (isnan(ddi->max_value) || ddf_max/ddi->max_value > 0.9 && ddf_max/ddi->max_value < 1.1);
+           (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }

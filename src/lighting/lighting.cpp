@@ -35,7 +35,7 @@ static float intersection_with_sphere(float radius, vec3 origin, vec3 direction)
     return t;
 }
 
-class LightToDistribution: public ::detail::DdfImpl {
+class LightToDistribution: public Ddf {
     // TODO Think about this
     friend class Superposition;
 private:

@@ -11,31 +11,16 @@
 
 namespace detail {
 
-struct DdfImpl: public Ddf {
-
-    // will return NaN if singular
-    virtual float value( glm::vec3 arg ) const = 0;
-
-    // used in sampling
-    // is infinity if singular
-    // must be initialized in subclasses
-    float max_value = std::numeric_limits<float>::signaling_NaN();
-
-    bool isSingular() const {
-        return max_value == std::numeric_limits<float>::infinity();
-    }
-};
-
 // TODO hide t from interface?
-struct TransformDdf: public detail::DdfImpl {
-    std::shared_ptr<const detail::DdfImpl> origin;
+struct TransformDdf: public Ddf {
+    std::shared_ptr<const Ddf> origin;
     glm::mat3 transformation;
     TransformDdf(std::shared_ptr<const Ddf> origin, glm::mat3 transformation){
-        this->origin = std::dynamic_pointer_cast<const detail::DdfImpl>(origin);
+        this->origin = std::dynamic_pointer_cast<const Ddf>(origin);
         assert(this->origin);
         this->transformation = transformation;
         // XXX best-guess
-        this->max_value = dynamic_cast<const detail::DdfImpl*>(origin.get())->max_value;
+        this->max_value = dynamic_cast<const Ddf*>(origin.get())->max_value;
         this->full_theoretical_weight = origin->full_theoretical_weight;
     }
     virtual glm::vec3 trySample() const override {
@@ -58,7 +43,7 @@ struct TransformDdf: public detail::DdfImpl {
 
 }// namespace
 
-struct UpperHalfDdf: public detail::DdfImpl {
+struct UpperHalfDdf: public Ddf {
     UpperHalfDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
@@ -69,7 +54,7 @@ struct UpperHalfDdf: public detail::DdfImpl {
     }
 };
 
-class CosineDdf: public detail::DdfImpl {
+class CosineDdf: public Ddf {
 public:
     CosineDdf(float w = 1.0f);
     virtual glm::vec3 trySample() const override;
@@ -81,7 +66,7 @@ public:
     }
 };
 
-class MirrorDdf: public detail::DdfImpl {
+class MirrorDdf: public Ddf {
 public:
     MirrorDdf(float w = 1.0f){
         max_value = std::numeric_limits<float>::infinity();

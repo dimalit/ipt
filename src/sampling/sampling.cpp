@@ -55,11 +55,11 @@ float CosineDdf::value( vec3 arg ) const {
 
 namespace detail {
 
-class SuperpositionDdf: public DdfImpl {
+class SuperpositionDdf: public Ddf {
 
 private:
-    std::shared_ptr<const DdfImpl> source, dest;
-    static float magic_compute_max_pdf(const DdfImpl* source, const DdfImpl* dest);
+    std::shared_ptr<const Ddf> source, dest;
+    static float magic_compute_max_pdf(const Ddf* source, const Ddf* dest);
 
 public:
 
@@ -79,7 +79,7 @@ public:
 };
 
 // TODO Indicate somehow that trySample should always succeed!
-struct UnionDdf: public DdfImpl {
+struct UnionDdf: public Ddf {
     std::vector< std::shared_ptr<const Ddf> > components;
     UnionDdf(){
         full_theoretical_weight = 0.0f;
@@ -96,8 +96,8 @@ struct UnionDdf: public DdfImpl {
 
 SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest) {
 
-    source = std::dynamic_pointer_cast<const DdfImpl>(_source);
-    dest   = std::dynamic_pointer_cast<const DdfImpl>(_dest);
+    source = std::dynamic_pointer_cast<const Ddf>(_source);
+    dest   = std::dynamic_pointer_cast<const Ddf>(_dest);
 
     assert(source && dest);
     assert(!source->isSingular() || !dest->isSingular());
@@ -161,7 +161,7 @@ vec3 UnionDdf::trySample() const {
 float UnionDdf::value( vec3 arg ) const {
     float res = 0.0f;
     for(shared_ptr<const Ddf> c: this->components){
-        const DdfImpl* c_impl = dynamic_cast<const DdfImpl*>(c.get());
+        const Ddf* c_impl = dynamic_cast<const Ddf*>(c.get());
         res += c->full_theoretical_weight * c_impl->value(arg);
     }// for
     return res;
