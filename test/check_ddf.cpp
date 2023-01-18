@@ -9,6 +9,8 @@ using namespace std;
 
 // TODO This whole file is duplicated. It's better then duplicate just lines of code, but maybe do something with it.
 
+const size_t N = 100000;
+
 vec3 polar2vec(float alpha, float phi){
     float r = sin(alpha);
     return vec3(r*cos(phi), r*sin(phi), cos(alpha));
@@ -32,11 +34,29 @@ float bucket_area(size_t alpha_bucket, size_t phi_bucket){
     return dx*dy;
 }
 
-bool check_ddf(const Ddf& ddf){
-    // 1 compute ddf integral and max
+void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
 
-    float ddf_integral = 0.0f;
-    float ddf_max = 0.0f;
+    SphericalDdf sph;
+
+    ddf_integral = 0.0f;
+    ddf_max = 0.0f;
+    for(size_t i = 0; i < N; ++i){
+
+        vec3 dir = vec3();
+        while(dir == vec3())
+            dir = sph.trySample();
+
+        float value = ddf.value(dir);
+        if(value > ddf_max)
+            ddf_max = value;
+        ddf_integral += value;
+
+    }// for
+
+    ddf_integral *= 4.0f*M_PI/N;
+}
+
+void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
     for(size_t i=0; i<20; ++i){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
@@ -48,8 +68,17 @@ bool check_ddf(const Ddf& ddf){
             ddf_integral += value*area;
         }
     }
+}
 
-    const size_t N = 100000;
+
+bool check_ddf(const Ddf& ddf){
+    // 1 compute ddf integral and max
+
+    float ddf_integral;
+    float ddf_max;
+
+    mc_integral_and_max(ddf, ddf_integral, ddf_max);
+
     float buckets[20][20];
     memset(&buckets[0][0], 0, sizeof(buckets));
     size_t total_tries = 0;
@@ -98,11 +127,11 @@ bool check_ddf(const Ddf& ddf){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N/ddf_integral;
+            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N;// we are trying to make it 1: /ddf_integral;
             float exper = buckets[i][j];
 
-//            cout << i << "\t" << j << "\t" << exper/bucket_area(i,j) << "\t"
-//                 << theor/bucket_area(i,j) << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
+//            cout << i << "\t" << j << "\t" << exper << "\t"
+//                 << theor << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
 
             exp_counter += buckets[i][j];
             theor_counter += theor;

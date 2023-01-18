@@ -7,6 +7,10 @@
 using namespace glm;
 using namespace std;
 
+// TODO This whole file is duplicated. It's better then duplicate just lines of code, but maybe do something with it.
+
+const size_t N = 100000;
+
 vec3 polar2vec(float alpha, float phi){
     float r = sin(alpha);
     return vec3(r*cos(phi), r*sin(phi), cos(alpha));
@@ -30,26 +34,53 @@ float bucket_area(size_t alpha_bucket, size_t phi_bucket){
     return dx*dy;
 }
 
-bool check_ddf(const Ddf& ddf){
-    const Ddf* ddi = dynamic_cast<const Ddf*>(&ddf);
+// TODO does not work for sphere, as it gives wrong area
+// (only visible)
+void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
 
-    // 1 compute ddf integral and max
+    SphericalDdf sph;
 
-    float ddf_integral = 0.0f;
-    float ddf_max = 0.0f;
+    ddf_integral = 0.0f;
+    ddf_max = 0.0f;
+    for(size_t i = 0; i < N; ++i){
+
+        vec3 dir = vec3();
+        while(dir == vec3())
+            dir = sph.trySample();
+
+        float value = ddf.value(dir);
+        if(value > ddf_max)
+            ddf_max = value;
+        ddf_integral += value;
+
+    }// for
+
+    ddf_integral *= 4.0f*M_PI/N;
+}
+
+void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
     for(size_t i=0; i<20; ++i){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float value = ddi->value(polar2vec(alpha, phi));
+            float value = ddf.value(polar2vec(alpha, phi));
             if(value > ddf_max)
                 ddf_max = value;
             float area = bucket_area(i, j);
             ddf_integral += value*area;
         }
+        }
     }
 
-    const size_t N = 100000;
+
+bool check_ddf(const Ddf& ddf){
+    // 1 compute ddf integral and max
+
+    float ddf_integral;
+    float ddf_max;
+
+    mc_integral_and_max(ddf, ddf_integral, ddf_max);
+
     float buckets[20][20];
     memset(&buckets[0][0], 0, sizeof(buckets));
     size_t total_tries = 0;
@@ -60,7 +91,7 @@ bool check_ddf(const Ddf& ddf){
     for(size_t i=0; i<N; ++i){
 
         ++total_tries;
-        vec3 vec = ddi->trySample();
+        vec3 vec = ddf.trySample();
         if(vec == vec3()){
             --i;
             continue;
@@ -98,11 +129,11 @@ bool check_ddf(const Ddf& ddf){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float theor = ddi->value(polar2vec(alpha, phi))*bucket_area(i,j)*N/ddf_integral;
+            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N;// we are trying to make it 1: /ddf_integral;
             float exper = buckets[i][j];
 
-//            cout << i << "\t" << j << "\t" << exper/bucket_area(i,j) << "\t"
-//                 << theor/bucket_area(i,j) << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
+//            cout << i << "\t" << j << "\t" << exper << "\t"
+//                 << theor << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
 
             exp_counter += buckets[i][j];
             theor_counter += theor;
@@ -115,7 +146,7 @@ bool check_ddf(const Ddf& ddf){
     }
 
     cout << "DDF integral = " << ddf_integral << endl;
-    cout << "DDF max      = " << ddf_max << " / " << ddi->max_value << endl;
+    cout << "DDF max      = " << ddf_max << " / " << ddf.max_value << endl;
 
     cout << "Experimental Total = " << exp_counter << endl;
     cout << "Theoretical total  = " << theor_counter << endl;
@@ -127,5 +158,5 @@ bool check_ddf(const Ddf& ddf){
     cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
-           (isnan(ddi->max_value) || ddf_max/ddi->max_value > 0.9 && ddf_max/ddi->max_value < 1.1);
+           (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }
