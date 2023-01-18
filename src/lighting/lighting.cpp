@@ -66,18 +66,15 @@ glm::vec3 LightToDistribution::trySample() const {
     light_intersection inter = light->sample();
     dir = normalize(inter.position-origin);
     float cosinus = dot(inter.normal, -dir);
-    if(cosinus <= 0.0f)               // if facing back
-        cosinus=0.0f;
-    float distance = length(inter.position-origin);
-    float decay = pow(distance, 2);
-    // TODO maybe intersection result should depend on a type of sampling function!?
-    inter.surface_power *= cosinus/decay;
+    if(cosinus < 1e-5f)               // if facing back
+        return vec3();
     Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
     return dir;
 }
 
 float LightToDistribution::value( glm::vec3 direction ) const {
-    std::optional<light_intersection> inter = light->traceRay(origin, direction);
+    // HACK
+    std::optional<light_intersection> inter = direction==vec3() ? Lighting::last_sample : light->traceRay(origin, direction);
     if(!inter.has_value())
         return 0.0f;
     glm::vec3 dir = glm::normalize(inter->position-origin);
@@ -85,7 +82,9 @@ float LightToDistribution::value( glm::vec3 direction ) const {
     assert(cosinus > -1e-5);
     if(cosinus<0.0f)
         return 0.0f;
-    return 1.0f;
+    float distance = length(inter->position-origin);
+    float decay = pow(distance, 2);
+    return decay/cosinus/light->area;
 }
 
 std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
@@ -194,6 +193,7 @@ optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 d
 // TODO Maybe use here sampling parameters to adjust surface_power?
 light_intersection SphereLight::sample() const {
 
+    // TODO Use here SphericalDdf?
     float u1 = randf()*2.0f - 1.0f;     // -1..+1
     float u2 = randf();
     float alpha = acos(u1);
