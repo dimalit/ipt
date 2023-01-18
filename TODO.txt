@@ -4,4 +4,8 @@ C++ linting:
  - naming convention
  - copy ctror dtor move ctor operators etc
  - override
- - find duplication like in polar2vec()
+ - find duplication like in polar2vec() and check_ddf.cpp!
+ - local variable in loop should be re-initialized every time!
+
+algorithm improvements:
+ - sample union distributins not randomly, but round-robin?
