@@ -43,6 +43,17 @@ struct TransformDdf: public Ddf {
 
 }// namespace
 
+struct SphericalDdf: public Ddf {
+    SphericalDdf();
+    virtual glm::vec3 trySample() const override;
+    virtual float value( glm::vec3 arg ) const override;
+    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
+        std::shared_ptr<Ddf> res = std::make_shared<SphericalDdf>(*this);
+        res->full_theoretical_weight *= coef;
+        return res;
+    }
+};
+
 struct UpperHalfDdf: public Ddf {
     UpperHalfDdf();
     virtual glm::vec3 trySample() const override;

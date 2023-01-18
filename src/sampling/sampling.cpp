@@ -13,6 +13,23 @@ bool p_hit(float prob){
     return randf() < prob;
 }
 
+SphericalDdf::SphericalDdf(){
+    max_value = 0.25/M_PI;
+    full_theoretical_weight = 1.0f; // simulate as though pdf=1
+}
+vec3 SphericalDdf::trySample() const {
+    float u1 = randf()*2.0f - 1.0f;
+    float u2 = randf();
+    float alpha = acos(u1);
+    float phi = 2*M_PI*u2;
+    float r = sin(alpha);
+    return vec3(r*cos(phi), r*sin(phi), u1);
+}
+float SphericalDdf::value( vec3 arg ) const {
+    // TODO assert length = 1?
+    return max_value;
+}
+
 UpperHalfDdf::UpperHalfDdf(){
     max_value = 1.0f;
     full_theoretical_weight = 2.0f*M_PI; // simulate as though pdf=1
@@ -164,7 +181,7 @@ float UnionDdf::value( vec3 arg ) const {
         const Ddf* c_impl = dynamic_cast<const Ddf*>(c.get());
         res += c->full_theoretical_weight * c_impl->value(arg);
     }// for
-    return res;
+    return res/this->full_theoretical_weight;
 }
 
 
