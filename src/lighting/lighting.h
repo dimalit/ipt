@@ -70,7 +70,6 @@ struct SphereLight: public Light {
 
 // for testing
 struct InvertedSphereLight: public SphereLight {
-    float radius;
     InvertedSphereLight(glm::vec3 origin, float radius, float power)
         :SphereLight(origin, radius, power){}
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override {
