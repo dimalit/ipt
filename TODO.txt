@@ -9,3 +9,11 @@ C++ linting:
 
 algorithm improvements:
  - sample union distributins not randomly, but round-robin?
+ - superposition of light and SDF in similar way to LightToDistrubution::value()?
+ - how to interchange sampling and scanning? (on SDF, on light hz)
+
+other:
+ - remove dynamic_cast's to Ddf
+
+queue:
+ - decide with full_theoretical_weights and try-Sample
