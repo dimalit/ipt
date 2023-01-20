@@ -48,7 +48,7 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
         // material
         res.normal = -planes[intersected_plane];   // inside
 
-        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>(1.0f);
+        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>();
 
         shared_ptr<RotateDdf> rotate = make_shared<RotateDdf>(dis, res.normal);
         res.sdf = rotate;
@@ -61,7 +61,7 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
         vec3 reflection = reflect(direction, res.normal);
         float eye_angle_cos = dot(-direction, res.normal);
 
-        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>(0.8f*eye_angle_cos);
+        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>();
         // DEBUG temporary skip: shared_ptr<const Ddf> specular = make_shared<const MirrorDdf>(0.2f);
 
         shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(diffuse, res.normal);

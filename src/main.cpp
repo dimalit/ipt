@@ -42,8 +42,6 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     if(!si.has_value())
         return 0.0f;
 
-    assert(si->sdf->full_theoretical_weight >= 0.0f);
-
     // 2 continue to geometry
     //DEBUG for geometry debugging
     //return si->position.y+1.0f;
@@ -62,12 +60,12 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     if(new_direction != vec3()){
         // correct by light_ddf distribution!
         float multiplier = 1.0f/light_ddf->value(new_direction)*si->sdf->value(new_direction);
-        res += multiplier*si->sdf->full_theoretical_weight * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
     }
 
 //    new_direction = si->sdf->trySample();
 //    if(new_direction != vec3()){
-//        res += si->sdf->full_theoretical_weight * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+//        res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
 //    }
 
     return isfinite(res)?res:0.0f;
@@ -83,6 +81,11 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
         float x = (ix+randf())/640.0f;
         float y = (iy+randf())/640.0f;
+
+        if(x==1.0f)
+            x=nextafter(x, 0.0f);
+        if(y==1.0f)
+            y=nextafter(y, 0.0f);
 
         vec3 origin, direction;
         tie(origin, direction) = scene.camera->sampleRay(x, y);

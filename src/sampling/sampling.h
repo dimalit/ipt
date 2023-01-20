@@ -21,7 +21,6 @@ struct TransformDdf: public Ddf {
         this->transformation = transformation;
         // XXX best-guess
         this->max_value = dynamic_cast<const Ddf*>(origin.get())->max_value;
-        this->full_theoretical_weight = origin->full_theoretical_weight;
     }
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
@@ -33,12 +32,6 @@ struct TransformDdf: public Ddf {
     }
 
     // TODO Need separate implementations for Continuous and Singular
-
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<TransformDdf>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
-    }
 };
 
 }// namespace
@@ -47,52 +40,31 @@ struct SphericalDdf: public Ddf {
     SphericalDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<SphericalDdf>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
-    }
 };
 
 struct UpperHalfDdf: public Ddf {
     UpperHalfDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<UpperHalfDdf>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
-    }
 };
 
 class CosineDdf: public Ddf {
 public:
-    CosineDdf(float w = 1.0f);
+    CosineDdf();
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<CosineDdf>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
-    }
 };
 
 class MirrorDdf: public Ddf {
 public:
-    MirrorDdf(float w = 1.0f){
+    MirrorDdf(){
         max_value = std::numeric_limits<float>::infinity();
-        full_theoretical_weight = w;
     }
     virtual glm::vec3 trySample() const override {
         return glm::vec3(0.0f, 0.0f, 1.0f);
     }
     virtual float value( glm::vec3 arg ) const override {
         return std::numeric_limits<float>::quiet_NaN();
-    }
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<MirrorDdf>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
     }
 };
 

@@ -16,6 +16,7 @@ struct intersection {
 struct surface_intersection: public intersection {
     float curvature;		// my addition
     std::shared_ptr<const Ddf> sdf;
+    float albedo = 1.0f;
 };
 
 struct light_intersection: public intersection {

@@ -46,7 +46,7 @@ std::optional<surface_intersection> GeometryOpenSpheres::traceRay(vec3 origin, v
 
         // material
         res.normal = {0,0,1};
-        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>(0.5f);
+        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>();
         res.sdf = dis;
     }
     else if(intersected_sphere >= 0){
@@ -56,7 +56,7 @@ std::optional<surface_intersection> GeometryOpenSpheres::traceRay(vec3 origin, v
         res.normal = normalize(res.position-spheres[intersected_sphere]);
         float eye_angle_cos = dot(-direction, res.normal);
 
-        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>(eye_angle_cos);
+        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>();
         shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(diffuse, res.normal);
         res.sdf = rotate_diffuse;
     }

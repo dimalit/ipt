@@ -11,8 +11,10 @@ using namespace std;
 
 shared_ptr<const Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) const {
     std::shared_ptr<const Ddf> res = unite();
+    float acc_power = 0.0f;
     for(shared_ptr<const Light> l: lights){
-        res = unite(res, l->lightToPoint(pos));
+        res = unite(res, acc_power, l->lightToPoint(pos), l->power);
+        acc_power += l->power;
     }
     return res;
 }

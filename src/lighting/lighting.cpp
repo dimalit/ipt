@@ -43,22 +43,15 @@ private:
     glm::vec3 origin;
 public:
     LightToDistribution(const Light* light, glm::vec3 origin) {
-        this->full_theoretical_weight = light->power;
         this->light = light;
         this->origin = origin;
         // TODO check specific light types elsewhere!
         if(dynamic_cast<const PointLight*>(light)){
             this->max_value = std::numeric_limits<float>::infinity();
-            full_theoretical_weight /= pow(light->minDistanceTo(origin), 2);
         }
     }
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
-    virtual std::shared_ptr<const Ddf> multiply(float coef) const override {
-        std::shared_ptr<Ddf> res = std::make_shared<LightToDistribution>(*this);
-        res->full_theoretical_weight *= coef;
-        return res;
-    }
 };
 
 glm::vec3 LightToDistribution::trySample() const {

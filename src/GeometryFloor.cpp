@@ -16,7 +16,7 @@ std::optional<surface_intersection> GeometryFloor::traceRay(vec3 origin, vec3 di
     res.position = origin + direction * t;
     res.curvature = 0.0f;
     res.normal = {0,0,1};
-    res.sdf = make_shared<const CosineDdf>(1.0f);
+    res.sdf = make_shared<const CosineDdf>();
     //res.sdf = unite(make_shared<const CosineDdf>(0.8f), make_shared<const MirrorDdf>(0.2f));
 
     return res;

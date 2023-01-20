@@ -17,7 +17,6 @@ bool eq(float a, float b){
 
 void test_ddf_basic(){
     UpperHalfDdf ud;
-    assert(eq(ud.full_theoretical_weight,2.0f*M_PI));
     assert(ud.max_value==1.0f);
     assert(!ud.isSingular());
 
@@ -25,8 +24,7 @@ void test_ddf_basic(){
     assert(ud.value(normalize(vec3(1,1,1)))==1.0f);
     assert(ud.value(normalize(vec3(1,1,-1)))==0.0f);
 
-    CosineDdf cd(0.5f);
-    assert(cd.full_theoretical_weight==0.5f);
+    CosineDdf cd;
     assert(eq(cd.max_value, 1.0f/M_PI));
     assert(!cd.isSingular());
 
@@ -34,8 +32,7 @@ void test_ddf_basic(){
     assert(eq(cd.value(vec3(1,0,EPS/10.0f)),0.0f));
     assert(cd.value(normalize(vec3(1,1,-1)))==0.0f);
 
-    MirrorDdf md(0.5f);
-    assert(md.full_theoretical_weight==0.5f);
+    MirrorDdf md;
     assert(isinf(md.max_value));
     assert(md.isSingular());
 }
