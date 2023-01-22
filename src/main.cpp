@@ -1,9 +1,10 @@
 #include "GridRenderPlane.h"
 #include "SimpleCamera.h"
 #include "CollectionLighting.h"
-#include "GeometrySphereInBox.h"
-#include "GeometryFloor.h"
-#include "GeometryOpenSpheres.h"
+
+#include <geometry/GeometrySphereInBox.h>
+#include <geometry/GeometryFloor.h>
+#include <geometry/GeometryOpenSpheres.h>
 
 #include <lighting/lighting.h>
 
@@ -130,7 +131,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 20);
+    render(scene, r_plane, 1);
 
     cout << "Max value = " << r_plane.max_value << endl;
 

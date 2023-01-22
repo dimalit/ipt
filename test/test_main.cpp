@@ -1,7 +1,6 @@
 #include "check_ddf.h"
 
 #include <sampling/sampling.h>
-#include <GeometrySphereInBox.h>
 #include <lighting/lighting.h>
 
 #include <iostream>

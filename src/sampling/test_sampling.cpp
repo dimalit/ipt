@@ -1,7 +1,6 @@
 #include "check_ddf.h"
 
 #include "sampling.h"
-#include "../GeometrySphereInBox.h"
 
 #include <iostream>
 #include <vector>
