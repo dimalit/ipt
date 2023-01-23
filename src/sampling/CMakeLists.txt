@@ -2,6 +2,7 @@ add_library(sampling STATIC
     sampling.h
     sampling.cpp
 )
+target_include_directories(sampling INTERFACE .)
 
 add_executable(test_sampling test_sampling.cpp check_ddf.h check_ddf.cpp)
 target_link_libraries(test_sampling PRIVATE sampling)
