@@ -15,19 +15,25 @@ bool eq(float a, float b){
 }
 
 void test_ddf_basic(){
+    SphericalDdf sd;
+    assert(eq(sd.max_value, 0.25f/M_PI));
+    assert(!sd.isSingular());
+    assert(eq(sd.value(normalize(vec3(1,1,1))),0.25f/M_PI));
+    assert(eq(sd.value(normalize(vec3(1,1,-1))), 0.25f/M_PI));
+
     UpperHalfDdf ud;
-    assert(ud.max_value==1.0f);
+    assert(eq(ud.max_value,0.5f/M_PI));
     assert(!ud.isSingular());
 
-    assert(ud.value(vec3())==1.0f);
-    assert(ud.value(normalize(vec3(1,1,1)))==1.0f);
+    assert(eq(ud.value(vec3(0,0,1)),0.5f/M_PI));
+    assert(eq(ud.value(normalize(vec3(1,1,1))),0.5f/M_PI));
     assert(ud.value(normalize(vec3(1,1,-1)))==0.0f);
 
     CosineDdf cd;
     assert(eq(cd.max_value, 1.0f/M_PI));
     assert(!cd.isSingular());
 
-    assert(eq(cd.value(vec3(0,0,1)),1.0f));
+    assert(eq(cd.value(vec3(0,0,1)),M_1_PI));
     assert(eq(cd.value(vec3(1,0,EPS/10.0f)),0.0f));
     assert(cd.value(normalize(vec3(1,1,-1)))==0.0f);
 
@@ -37,6 +43,10 @@ void test_ddf_basic(){
 }
 
 void test_sampling_ddfs(){
+
+    cout << "SphericalDdf:" << endl;
+    cout << (check_ddf(SphericalDdf()) ? "OK" : "FAIL") << endl;
+    cout << endl;
 
     cout << "UpperHalfDdf:" << endl;
     cout << (check_ddf(UpperHalfDdf()) ? "OK" : "FAIL") << endl;
@@ -69,5 +79,6 @@ void test_sampling_ddfs(){
 
 int main(){
     test_ddf_basic();
+    test_sampling_ddfs();
     return 0;
 }

@@ -158,5 +158,6 @@ bool check_ddf(const Ddf& ddf){
     cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
+           ddf_integral > 0.95f && ddf_integral < 1.05f &&
            (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }

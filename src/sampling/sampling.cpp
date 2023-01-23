@@ -30,7 +30,7 @@ float SphericalDdf::value( vec3 ) const {
 }
 
 UpperHalfDdf::UpperHalfDdf(){
-    max_value = 1.0f;
+    max_value = 0.5f/M_PI;
 }
 vec3 UpperHalfDdf::trySample() const {
     float u1 = randf();
@@ -64,7 +64,7 @@ float CosineDdf::value( vec3 arg ) const {
     // TODO function for this like clip()?
     if(arg.z < 0.0f)
         return 0.0f;
-    return arg.z;
+    return arg.z/M_PI;
 }
 
 namespace detail {
