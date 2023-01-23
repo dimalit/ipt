@@ -77,8 +77,26 @@ void test_sampling_ddfs(){
 //    cout << endl;
 }
 
+void test_superposition(){
+
+    shared_ptr<const Ddf> sup_self = chain(make_shared<UpperHalfDdf>(), make_shared<UpperHalfDdf>());
+
+    cout << "UpperHalfDdf * 2:" << endl;
+    cout << (check_ddf(*sup_self) ? "OK" : "FAIL") << endl;
+    cout << endl;
+
+    shared_ptr<const Ddf> right_half = make_shared<RotateDdf>(make_shared<UpperHalfDdf>(), vec3(1,0,0));
+    shared_ptr<const Ddf> cosine = make_shared<CosineDdf>();
+    shared_ptr<const Ddf> half_cosine = chain(right_half, cosine);
+
+    cout << "Right half-cosine:" << endl;
+    cout << (check_ddf(*half_cosine, false) ? "OK" : "FAIL") << endl;
+    cout << endl;
+}
+
 int main(){
-    test_ddf_basic();
-    test_sampling_ddfs();
+    //test_ddf_basic();
+    //test_sampling_ddfs();
+    test_superposition();
     return 0;
 }

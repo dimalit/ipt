@@ -80,7 +80,7 @@ public:
     SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest);
 
     virtual float value( glm::vec3 x ) const override {
-        return source->value(x) * dest->value(x);
+        return source->value(x) * dest->value(x) / dest->max_value;
     }
 
     virtual glm::vec3 trySample() const override;
@@ -122,18 +122,7 @@ vec3 SuperpositionDdf::trySample() const {
     if(x == vec3())         // fail if fail
         return x;
 
-    // NB should not be both singular
-    if(source->isSingular())
-        return x;
-
-    if(dest->isSingular())
-        return dest->trySample();
-
-    // As we need source*dest <= source*k,
-    // we get k >= dest
-    float k = dest->max_value;
-
-    bool hit = p_hit( this->value( x ) / (source->value( x )*k) );
+    bool hit = p_hit( dest->value( x ) / dest->max_value );
 
     return hit ? x : vec3();
 }

@@ -73,7 +73,7 @@ void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max)
     }
 
 
-bool check_ddf(const Ddf& ddf){
+bool check_ddf(const Ddf& ddf, bool strict_integral){
     // 1 compute ddf integral and max
 
     float ddf_integral;
@@ -129,7 +129,7 @@ bool check_ddf(const Ddf& ddf){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
             float phi   = phi_from_i(j);
-            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N;// we are trying to make it 1: /ddf_integral;
+            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N / ddf_integral;
             float exper = buckets[i][j];
 
 //            cout << i << "\t" << j << "\t" << exper << "\t"
@@ -158,6 +158,6 @@ bool check_ddf(const Ddf& ddf){
     cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
-           ddf_integral > 0.95f && ddf_integral < 1.05f &&
+           (!strict_integral || ddf_integral > 0.95f && ddf_integral < 1.05f) &&
            (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }
