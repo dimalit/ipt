@@ -8,7 +8,7 @@
 
 #include <lighting/lighting.h>
 
-#include <sampling/sampling.h>
+#include <libddf/ddf.h>
 #include "tracer_interfaces.h"
 #include <randf.h>
 

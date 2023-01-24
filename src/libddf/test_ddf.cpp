@@ -1,6 +1,6 @@
 #include "check_ddf.h"
 
-#include "sampling.h"
+#include "ddf_detail.h"
 
 #include <iostream>
 #include <vector>

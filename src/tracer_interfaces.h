@@ -1,7 +1,7 @@
 #ifndef TRACER_INTERFACES_H
 #define TRACER_INTERFACES_H
 
-#include "sampling/ddf.h"
+#include "libddf/ddf.h"
 
 #include <glm/vec3.hpp>
 

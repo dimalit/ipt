@@ -4,7 +4,7 @@
 
 #include "geometric_utils.h"
 
-#include <sampling/sampling.h>
+#include <libddf/ddf_detail.h>
 
 using namespace glm;
 using namespace std;

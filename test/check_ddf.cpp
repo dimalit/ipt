@@ -1,4 +1,4 @@
-#include <sampling/sampling.h>
+#include <libddf/ddf_detail.h>
 
 #include <iostream>
 
