@@ -5,7 +5,13 @@ add_library(ddf STATIC
 )
 target_include_directories(ddf INTERFACE .)
 
-add_executable(test_ddf test_ddf.cpp check_ddf.h check_ddf.cpp)
+add_library(ddf_testlib STATIC
+    check_ddf.h
+    check_ddf.cpp
+)
+
+add_executable(test_ddf test_ddf.cpp)
 target_link_libraries(test_ddf PRIVATE ddf)
+target_link_libraries(test_ddf PRIVATE ddf_testlib)
 enable_testing()
 add_test(test_ddf test_ddf)
