@@ -1,7 +1,6 @@
 #include "lighting.h"
 
-// TODO not very good dependency from sampling's utility code
-#include <libddf/check_ddf.h>
+#include <check_ddf.h>
 
 #include <iostream>
 

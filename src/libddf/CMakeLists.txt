@@ -9,6 +9,7 @@ add_library(ddf_testlib STATIC
     check_ddf.h
     check_ddf.cpp
 )
+target_include_directories(ddf_testlib INTERFACE .)
 
 add_executable(test_ddf test_ddf.cpp)
 target_link_libraries(test_ddf PRIVATE ddf)
