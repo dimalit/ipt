@@ -16,20 +16,20 @@ vec3 polar2vec(float alpha, float phi){
     return vec3(r*cos(phi), r*sin(phi), cos(alpha));
 }
 
-float alpha_from_i(size_t alpha_bucket){
-    return (alpha_bucket+0.5f)/20.0f*M_PI;
+float alpha_from_i(size_t alpha_bucket, size_t n){
+    return (alpha_bucket+0.5f)/n*M_PI;
 }
 
-float phi_from_i(size_t phi_bucket){
-    return (phi_bucket+0.5f)/20.0f*2.0f*M_PI;
+float phi_from_i(size_t phi_bucket, size_t n){
+    return (phi_bucket+0.5f)/n*2.0f*M_PI;
 }
 
-float bucket_area(size_t alpha_bucket, size_t phi_bucket){
-    float alpha = alpha_from_i(alpha_bucket);
-    float phi   = phi_from_i(phi_bucket);
+float bucket_area(size_t alpha_bucket, size_t phi_bucket, size_t alpha_buckets, size_t phi_buckets){
+    float alpha = alpha_from_i(alpha_bucket, alpha_buckets);
+    float phi   = phi_from_i(phi_bucket, phi_buckets);
 
-    float dy = M_PI / 20.0f;
-    float dx = 2.0f*M_PI*sin(alpha) / 20.0f;
+    float dy = M_PI / alpha_buckets;
+    float dx = 2.0f*M_PI*sin(alpha) / phi_buckets;
 
     return dx*dy;
 }
@@ -61,19 +61,19 @@ void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
 void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
     for(size_t i=0; i<20; ++i){
         for(size_t j=0; j<20; ++j){
-            float alpha = alpha_from_i(i);
-            float phi   = phi_from_i(j);
+            float alpha = alpha_from_i(i, 20);
+            float phi   = phi_from_i(j, 20);
             float value = ddf.value(polar2vec(alpha, phi));
             if(value > ddf_max)
                 ddf_max = value;
-            float area = bucket_area(i, j);
+            float area = bucket_area(i, j, 20, 20);
             ddf_integral += value*area;
         }
         }
     }
 
 
-bool check_ddf(const Ddf& ddf, bool strict_integral){
+bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t size_phi){
     // 1 compute ddf integral and max
 
     float ddf_integral;
@@ -81,7 +81,7 @@ bool check_ddf(const Ddf& ddf, bool strict_integral){
 
     mc_integral_and_max(ddf, ddf_integral, ddf_max);
 
-    float buckets[20][20];
+    float buckets[size_alpha][size_phi];
     memset(&buckets[0][0], 0, sizeof(buckets));
     size_t total_tries = 0;
 
@@ -125,11 +125,11 @@ bool check_ddf(const Ddf& ddf, bool strict_integral){
     float chi2 = 0.0f;
     size_t dof_skip_counter = 0; // for chi^2
 
-    for(size_t i=0; i<20; ++i){
-        for(size_t j=0; j<20; ++j){
-            float alpha = alpha_from_i(i);
-            float phi   = phi_from_i(j);
-            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i,j)*N / ddf_integral;
+    for(size_t i=0; i<size_alpha; ++i){
+        for(size_t j=0; j<size_phi; ++j){
+            float alpha = alpha_from_i(i, size_alpha);
+            float phi   = phi_from_i(j, size_phi);
+            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i, j, size_alpha, size_phi)*N / ddf_integral;
             float exper = buckets[i][j];
 
 //            cout << i << "\t" << j << "\t" << exper << "\t"
@@ -152,12 +152,14 @@ bool check_ddf(const Ddf& ddf, bool strict_integral){
     cout << "Theoretical total  = " << theor_counter << endl;
     cout << "Total tries        = " << total_tries << endl;
 
+    size_t total_buckets = size_alpha * size_phi;
     float chi_floor = 70, chi_ceil = 135;       // for 100
-    chi_floor *= (400.0f-dof_skip_counter) / 100;
-    chi_ceil *= (400.0f-dof_skip_counter) / 100;
-    cout << "Chi^2 " << 400-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
+    chi_floor *= (total_buckets-dof_skip_counter) / 100;
+    chi_ceil *= (total_buckets-dof_skip_counter) / 100;
+    cout << "Chi^2 " << total_buckets-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
            (!strict_integral || ddf_integral > 0.95f && ddf_integral < 1.05f) &&
            (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }
+
