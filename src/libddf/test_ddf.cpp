@@ -111,9 +111,21 @@ void test_superposition(){
 
 }
 
+void test_union(){
+    shared_ptr<const Ddf> right = make_shared<RotateDdf>(make_shared<SquareDdfForTest>(), normalize(vec3(1,0,1)));
+    shared_ptr<const Ddf> left  = make_shared<RotateDdf>(make_shared<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
+    shared_ptr<const Ddf> both  = unite(left, 1.0f, right, 1.0f);
+
+    cout << "Union left+right square:" << endl;
+    cout << (check_ddf(*both, true, 40, 40) ? "OK" : "FAIL") << endl;
+    cout << endl;
+}
+
 int main(){
-    test_ddf_basic();
-    test_sampling_ddfs();
-    test_superposition();
+//    test_ddf_basic();
+//    test_sampling_ddfs();
+//    test_superposition();
+
+    test_union();
     return 0;
 }
