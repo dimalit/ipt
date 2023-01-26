@@ -51,11 +51,11 @@ void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
         float value = ddf.value(dir);
         if(value > ddf_max)
             ddf_max = value;
-        ddf_integral += value;
+        ddf_integral += value/sph.value(dir);
 
     }// for
 
-    ddf_integral *= 4.0f*M_PI/N;
+    ddf_integral /= N;
 }
 
 void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
@@ -69,9 +69,47 @@ void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max)
             float area = bucket_area(i, j, 20, 20);
             ddf_integral += value*area;
         }
-        }
     }
+}
 
+int normalize_phi(size_t j, size_t n){
+    if(j<0)
+        j+=n;
+    if(j>=n)
+        j-=n;
+    return j;
+}
+
+bool has_0_neighbours(const Ddf& ddf, size_t i, size_t j, float* buckets, size_t size_alpha, size_t size_phi){
+    int ii, jj;
+    float value;
+
+    ii=i+1;
+    jj=j;
+    value = ddf.value(polar2vec(alpha_from_i(ii, size_alpha), phi_from_i(jj, size_phi)));
+    if(ii<size_alpha && (buckets[ii*size_phi+jj]==0.0f || value==0.0f))
+        return true;
+
+    ii=i-1;
+    jj=j;
+    value = ddf.value(polar2vec(alpha_from_i(ii, size_alpha), phi_from_i(jj, size_phi)));
+    if(ii>=0 && (buckets[ii*size_phi+jj]==0.0f || value==0.0f))
+        return true;
+
+    ii=i;
+    jj=normalize_phi(j+1, size_phi);
+    value = ddf.value(polar2vec(alpha_from_i(ii, size_alpha), phi_from_i(jj, size_phi)));
+    if(buckets[ii*size_phi+jj]==0.0f || value==0.0f)
+        return true;
+
+    ii=i;
+    jj=normalize_phi(j-1, size_phi);
+    value = ddf.value(polar2vec(alpha_from_i(ii, size_alpha), phi_from_i(jj, size_phi)));
+    if(buckets[ii*size_phi+jj]==0.0f || value==0.0f)
+        return true;
+
+    return false;
+}
 
 bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t size_phi){
     // 1 compute ddf integral and max
@@ -113,8 +151,8 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
         assert(alpha >= -1e-6 && alpha < M_PI+1e-6);
         assert(phi >= -1e-6 && phi < 2.0f*M_PI+1e-6);
 
-        size_t alpha_bucket = alpha/M_PI * 20.0f;
-        size_t phi_bucket   = phi/2.0/M_PI * 20.0f;
+        size_t alpha_bucket = alpha/M_PI * size_alpha;
+        size_t phi_bucket   = phi/2.0/M_PI * size_phi;
 
         ++buckets[alpha_bucket][phi_bucket];
     }// for
@@ -127,23 +165,24 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
 
     for(size_t i=0; i<size_alpha; ++i){
         for(size_t j=0; j<size_phi; ++j){
-            float alpha = alpha_from_i(i, size_alpha);
-            float phi   = phi_from_i(j, size_phi);
-            float theor = ddf.value(polar2vec(alpha, phi))*bucket_area(i, j, size_alpha, size_phi)*N / ddf_integral;
+            float theor = ddf.value(polar2vec(alpha_from_i(i, size_alpha), phi_from_i(j, size_phi)))*bucket_area(i, j, size_alpha, size_phi)*N / ddf_integral;
             float exper = buckets[i][j];
-
-//            cout << i << "\t" << j << "\t" << exper << "\t"
-//                 << theor << " -> " << (theor > 1e-6 ? exper/theor : -1) << endl;
 
             exp_counter += buckets[i][j];
             theor_counter += theor;
 
-            if(theor > 2 && exper >= 2)
+            // TODO We ignore partially-iverlapping buckets! Look for paper about "chi-square test for discontinuous distributions"
+            bool use_it = theor > 2 && exper >= 2 && ! has_0_neighbours(ddf, i,j,&buckets[0][0],size_alpha,size_phi);
+            if(use_it)
                 chi2 += pow(exper-theor, 2) / theor;
             else
                 ++dof_skip_counter;
-        }
-    }
+
+//            cout << i << "\t" << j << "\t" << exper << "\t"
+//                 << theor << " -> " << (theor > 1e-6 ? exper/theor : -1) << " " << (use_it?"use":"skip") << endl;
+
+        }// for j
+    }// for i
 
     cout << "DDF integral = " << ddf_integral << endl;
     cout << "DDF max      = " << ddf_max << " / " << ddf.max_value << endl;
@@ -154,8 +193,8 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
 
     size_t total_buckets = size_alpha * size_phi;
     float chi_floor = 70, chi_ceil = 135;       // for 100
-    chi_floor *= (total_buckets-dof_skip_counter) / 100;
-    chi_ceil *= (total_buckets-dof_skip_counter) / 100;
+    chi_floor *= (total_buckets-dof_skip_counter) / 100.0f;
+    chi_ceil *= (total_buckets-dof_skip_counter) / 100.0f;
     cout << "Chi^2 " << total_buckets-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&

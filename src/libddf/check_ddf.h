@@ -21,19 +21,20 @@ public:
         glm::vec3 dir = glm::normalize(pos);
         return dir;
     }
+    // const here! it made mistake already (arg/=z)!!
     virtual float value( glm::vec3 arg ) const override {
         if(arg.z <= 0.0f)
             return 0.0f;
 
         // check intersection
-        arg /= arg.z;
+        glm::vec3 inter = arg / arg.z;
 
-        if(std::abs(arg.x) > side/2 || std::abs(arg.y) > side/2)
+        if(std::abs(inter.x) > side/2 || std::abs(inter.y) > side/2)
             return 0.0f;
 
         float area_density = 1.0/side/side;
         float cosinus=arg.z;
-        float angular_density = area_density*pow(glm::length(arg), 2)/cosinus;
+        float angular_density = area_density*pow(glm::length(inter), 2)/cosinus;
         return angular_density;
     }
 };

@@ -92,11 +92,28 @@ void test_superposition(){
     cout << "Right half-cosine:" << endl;
     cout << (check_ddf(*half_cosine, false) ? "OK" : "FAIL") << endl;
     cout << endl;
+
+    shared_ptr<const Ddf> square = make_shared<SquareDdfForTest>(1.0f);
+    cout << "Plain 1x1 square:" << endl;
+    cout << (check_ddf(*square, true, 40, 20) ? "OK" : "FAIL") << endl;
+    cout << endl;
+
+    shared_ptr<const Ddf> square_over_cosine = chain(square, cosine);
+    shared_ptr<const Ddf> tilted_square_over_cosine = chain(make_shared<RotateDdf>(square, normalize(vec3(1,1,1))), cosine);
+
+    cout << "Square over cosine:" << endl;
+    cout << (check_ddf(*square_over_cosine, false, 40, 20) ? "OK" : "FAIL") << endl;
+    cout << endl;
+
+    cout << "Tilted square over cosine:" << endl;
+    cout << (check_ddf(*tilted_square_over_cosine, false, 80, 40) ? "OK" : "FAIL") << endl;
+    cout << endl;
+
 }
 
 int main(){
-    //test_ddf_basic();
-    //test_sampling_ddfs();
+    test_ddf_basic();
+    test_sampling_ddfs();
     test_superposition();
     return 0;
 }
