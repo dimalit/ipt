@@ -189,7 +189,8 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
 
     cout << "Experimental Total = " << exp_counter << endl;
     cout << "Theoretical total  = " << theor_counter << endl;
-    cout << "Total tries        = " << total_tries << endl;
+    float success_ratio = (float)N/total_tries;
+    cout << "Sample success ratio = " << success_ratio << endl;
 
     size_t total_buckets = size_alpha * size_phi;
     float chi_floor = 70, chi_ceil = 135;       // for 100
@@ -198,6 +199,7 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
     cout << "Chi^2 " << total_buckets-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
+           success_ratio/ddf_integral > 0.95f && success_ratio/ddf_integral < 1.05f &&
            (!strict_integral || ddf_integral > 0.95f && ddf_integral < 1.05f) &&
            (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
 }
