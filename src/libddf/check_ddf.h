@@ -13,7 +13,7 @@ class SquareDdfForTest: public Ddf{
 private:
     float side;
 public:
-    SquareDdfForTest(float _side): side(_side){}
+    SquareDdfForTest(float _side = 1.0f): side(_side){}
     virtual glm::vec3 trySample() const override {
         float u1 = randf()-0.5f;
         float u2 = randf()-0.5f;
