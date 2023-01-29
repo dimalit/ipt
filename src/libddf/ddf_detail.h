@@ -82,4 +82,24 @@ struct RotateDdf: public detail::TransformDdf {
     }
 };
 
+// TODO Probably this should exist as already chain of 2
+struct InvertDdf: public Ddf {
+    std::shared_ptr<const Ddf> origin;
+    InvertDdf(std::shared_ptr<const Ddf> origin, float min_value){
+        this->origin = std::dynamic_pointer_cast<const Ddf>(origin);
+        assert(this->origin);
+        this->max_value = 1.0f/min_value;
+    }
+    virtual glm::vec3 trySample() const override {
+        // TODO Do it better?
+        assert(false && "not implemented");
+        return glm::vec3();
+    }
+
+    virtual float value( glm::vec3 arg ) const override {
+        float v = origin->value(arg);
+        return v==0.0f ? 0.0f : 1.0f/v;
+    }
+};
+
 #endif // SAMPLING_H

@@ -109,6 +109,15 @@ void test_superposition(){
     cout << (check_ddf(*tilted_square_over_cosine, false, 80, 40) ? "OK" : "FAIL") << endl;
     cout << endl;
 
+    // Very important case: square over inverse itself!
+    shared_ptr<const Ddf> big_square = make_shared<SquareDdfForTest>(10.0f);
+    float min_value = big_square->value(vec3(0,0,1));
+    shared_ptr<const Ddf> inverse = make_shared<InvertDdf>(big_square, min_value);
+    shared_ptr<const Ddf> square_over_inverse = chain(big_square, inverse);
+
+    cout << "Big square over inverse itself:" << endl;
+    cout << (check_ddf(*square_over_inverse, false) ? "OK" : "FAIL") << endl;
+    cout << endl;
 }
 
 void test_union(){
