@@ -56,20 +56,21 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
 
     //bool cast_light = rand()%2==0;
 
-    new_direction = light_ddf->trySample();
-    // possible dimming because of this
-    if(new_direction != vec3()){
-        // correct by light_ddf distribution!
-        float multiplier = 1.0f/light_ddf->value(new_direction)*si->sdf->value(new_direction);
-        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+    for(size_t i=0; i<100; ++i){
+        new_direction = light_ddf->trySample();
+        // possible dimming because of this
+        if(new_direction != vec3()){
+            // correct by light_ddf distribution!
+            float multiplier = 1.0f/light_ddf->value(new_direction)*si->sdf->value(new_direction);
+            res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+        }
+
+    //    new_direction = si->sdf->trySample();
+    //    if(new_direction != vec3()){
+    //        res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+    //    }
     }
-
-//    new_direction = si->sdf->trySample();
-//    if(new_direction != vec3()){
-//        res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
-//    }
-
-    return isfinite(res)?res:0.0f;
+    return isfinite(res)?res/100:0.0f;
 }
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){

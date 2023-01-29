@@ -13,7 +13,11 @@ shared_ptr<const Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) con
     std::shared_ptr<const Ddf> res = unite();
     float acc_power = 0.0f;
     for(shared_ptr<const Light> l: lights){
-        res = unite(res, acc_power, l->lightToPoint(pos), l->power);
+        shared_ptr<const Ddf> light_ddf = l->lightToPoint(pos);
+        vec3 nearest_point = l->nearestPointTo(pos);
+        float light_ddf_min = light_ddf->value(normalize(nearest_point-pos));
+        shared_ptr<const Ddf> mix = chain(light_ddf, make_shared<InvertDdf>(light_ddf, light_ddf_min));
+        res = unite(res, acc_power, mix, l->power);
         acc_power += l->power;
     }
     return res;

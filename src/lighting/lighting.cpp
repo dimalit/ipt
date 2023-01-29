@@ -149,25 +149,47 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     return res;
 }
 
-float AreaLight::minDistanceTo(vec3 point) const {
-    // TODO how to handle case when point is behinf ligt direction?
+vec3 AreaLight::nearestPointTo(vec3 point) const {
+
+    float min_distance = numeric_limits<float>::infinity();
+    vec3 res;
+
+    // TODO how to handle case when point is behind ligt direction?
     vec3 normal = normalize(cross(x_axis, y_axis));
     optional<light_intersection> inter = traceRay(point, -normal);
-    float min_distance = numeric_limits<float>::infinity();
-    if(inter.has_value())
+
+    if(inter.has_value()){
         min_distance = length(inter->position-point);
+        res = inter->position;
+    }
 
     float corner_distance = length(position-point);
-    min_distance = std::min(min_distance, corner_distance);
+    if(min_distance > corner_distance){
+        min_distance = corner_distance;
+        res = position;
+    }
+
     corner_distance = length(position+x_axis-point);
-    min_distance = std::min(min_distance, corner_distance);
+    if(min_distance > corner_distance){
+        min_distance = corner_distance;
+        res = position+x_axis;
+    }
+
     corner_distance = length(position+y_axis-point);
-    min_distance = std::min(min_distance, corner_distance);
+    if(min_distance > corner_distance){
+        min_distance = corner_distance;
+        res = position+y_axis;
+    }
+
     if(type==TYPE_DIAMOND){
         corner_distance = length(position+x_axis+y_axis-point);
-        min_distance = std::min(min_distance, corner_distance);
+        if(min_distance > corner_distance){
+            min_distance = corner_distance;
+            res = position+x_axis+y_axis;
+        }
     }// if diamond
-    return min_distance;
+
+    return res;
 }
 
 optional<light_intersection> SphereLight::traceRay(glm::vec3 origin, glm::vec3 direction) const {

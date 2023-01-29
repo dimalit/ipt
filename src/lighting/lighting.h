@@ -12,7 +12,7 @@ struct Light {
     glm::vec3 position;
 
     virtual light_intersection sample() const = 0;
-    virtual float minDistanceTo(glm::vec3 point) const = 0;
+    virtual glm::vec3 nearestPointTo(glm::vec3 point) const = 0;
 };
 
 class AreaLight: public Light {
@@ -26,7 +26,7 @@ public:
     AreaLight(glm::vec3 origin, glm::vec3 x_axis, glm::vec3 y_axis, float power, type_t type=TYPE_DIAMOND);
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
     virtual light_intersection sample() const override;
-    virtual float minDistanceTo(glm::vec3 point) const override;
+    virtual glm::vec3 nearestPointTo(glm::vec3 point) const override;
 };
 
 class PointLight:public Light {
@@ -47,8 +47,8 @@ public:
 
     virtual light_intersection sample() const override;
 
-    virtual float minDistanceTo(glm::vec3 point) const override {
-        return length(point-position);
+    virtual glm::vec3 nearestPointTo(glm::vec3 point) const override {
+        return position;
     }
 };
 
@@ -62,9 +62,8 @@ struct SphereLight: public Light {
     }
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const override;
     virtual light_intersection sample() const override;
-    virtual float minDistanceTo(glm::vec3 point) const override {
-        float res = length(position-point) - radius;
-        return std::abs(res);
+    virtual glm::vec3 nearestPointTo(glm::vec3 point) const override {
+        return traceRay(point, glm::normalize(position-point))->position;
     }
 };
 
