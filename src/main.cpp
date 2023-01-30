@@ -101,10 +101,11 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         assert(isfinite(value));
         r_plane.addRay(x, y, value);
 
+        }// for x
+        cout << iy << endl;
+        }// for y
 
-        }}// for x y
-
-        cout << sample << " / " << n_samples << endl;
+        cout << "Sample " << sample << " / " << n_samples << " OK" << endl;
 
     }// for sample
 }

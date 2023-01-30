@@ -12,6 +12,7 @@ struct Light {
     glm::vec3 position;
 
     virtual light_intersection sample() const = 0;
+    // It can be 0,0,0 if light doesn't shine to this point!
     virtual glm::vec3 nearestPointTo(glm::vec3 point) const = 0;
 };
 

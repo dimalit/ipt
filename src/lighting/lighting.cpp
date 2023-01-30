@@ -36,9 +36,6 @@ static float intersection_with_sphere(float radius, vec3 origin, vec3 direction)
 }
 
 class LightToDistribution: public Ddf {
-    // TODO Think about this
-    friend class Superposition;
-private:
     const Light* light;
     glm::vec3 origin;
 public:
@@ -49,6 +46,19 @@ public:
         if(dynamic_cast<const PointLight*>(light)){
             this->max_value = std::numeric_limits<float>::infinity();
         }
+    }
+    virtual glm::vec3 trySample() const override;
+    virtual float value( glm::vec3 direction ) const override;
+};
+
+// filters samples by it's own PDF - resulting in a flat PDF
+class LightToChainedDistribution: public Ddf {
+    shared_ptr<const LightToDistribution> backend_disribution;
+public:
+    LightToChainedDistribution(const Light* light, glm::vec3 origin)
+        :backend_disribution(make_shared<LightToDistribution>(light, origin)){
+            vec3 nearest_point = light->nearestPointTo(origin);
+            this->max_value = nearest_point == vec3() ? 0.0f : backend_disribution->value(normalize(nearest_point-origin));
     }
     virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
@@ -80,8 +90,32 @@ float LightToDistribution::value( glm::vec3 direction ) const {
     return decay/cosinus/light->area;
 }
 
+static bool p_hit(float prob){
+    // TODO this 1.3 is obviously a bug
+    //assert(prob >= 0.0f && prob < 1.1f);
+    return randf() < prob;
+}
+
+glm::vec3 LightToChainedDistribution::trySample() const {
+    vec3 x = backend_disribution->trySample();
+    if(x == vec3())         // fail if fail
+        return x;
+
+    float backend_value = backend_disribution->value( x );
+    bool hit = p_hit( max_value / backend_value );
+
+    return hit ? x : vec3();
+}
+
+float LightToChainedDistribution::value( glm::vec3 direction ) const {
+    if(backend_disribution->value(direction) != 0.0f)
+        return max_value;
+    else
+        return 0.0f;
+}
+
 std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
-    return std::make_shared<const LightToDistribution>(this, pos);
+    return std::make_shared<const LightToChainedDistribution>(this, pos);
 }
 
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){
@@ -149,45 +183,79 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     return res;
 }
 
+vec3 nearest_line_point(vec3 a, vec3 b, vec3 poi){
+    vec3 a_to_poi = poi - a;
+    vec3 unit_dir = normalize(b-a);
+    float coord = dot(a_to_poi, unit_dir);
+    if(coord < 0.0f)
+        return a;
+    else if(coord > length(b-a))
+        return b;
+    else
+        return a+unit_dir*coord;
+}
+
 vec3 AreaLight::nearestPointTo(vec3 point) const {
 
-    float min_distance = numeric_limits<float>::infinity();
-    vec3 res;
+    float max_influence = 0.0f;
+    vec3 res = vec3();
 
-    // TODO how to handle case when point is behind ligt direction?
+    // TODO how to handle case when point is behind light direction?
     vec3 normal = normalize(cross(x_axis, y_axis));
     optional<light_intersection> inter = traceRay(point, -normal);
+    // ignore back and near-same-plane points
+    // TODO systematically handle such cases!
+    if(dot(normal, normalize(point-position))<1e-6)
+        return vec3();
+
+    float min_distance = numeric_limits<float>::infinity();
 
     if(inter.has_value()){
         min_distance = length(inter->position-point);
         res = inter->position;
     }
 
-    float corner_distance = length(position-point);
-    if(min_distance > corner_distance){
-        min_distance = corner_distance;
-        res = position;
+    vec3 p = nearest_line_point(position, position+x_axis, point);
+    float distance = length(p-point);
+    if(min_distance > distance){
+        min_distance = distance;
+        res = p;
     }
 
-    corner_distance = length(position+x_axis-point);
-    if(min_distance > corner_distance){
-        min_distance = corner_distance;
-        res = position+x_axis;
+    p = nearest_line_point(position, position+y_axis, point);
+    distance = length(p-point);
+    if(min_distance > distance){
+        min_distance = distance;
+        res = p;
     }
 
-    corner_distance = length(position+y_axis-point);
-    if(min_distance > corner_distance){
-        min_distance = corner_distance;
-        res = position+y_axis;
-    }
-
-    if(type==TYPE_DIAMOND){
-        corner_distance = length(position+x_axis+y_axis-point);
-        if(min_distance > corner_distance){
-            min_distance = corner_distance;
-            res = position+x_axis+y_axis;
+    if(type==TYPE_TRIANLE){
+        p = nearest_line_point(position+x_axis, position+y_axis, point);
+        distance = length(p-point);
+        if(min_distance > distance){
+            min_distance = distance;
+            res = p;
         }
-    }// if diamond
+    }// if triangle
+    else{
+        p = nearest_line_point(position+x_axis, position+x_axis+y_axis, point);
+        distance = length(p-point);
+        if(min_distance > distance){
+            min_distance = distance;
+            res = p;
+        }
+        p = nearest_line_point(position+y_axis, position+x_axis+y_axis, point);
+        distance = length(p-point);
+        if(min_distance > distance){
+            min_distance = distance;
+            res = p;
+        }
+    }
+
+    // adjst not to be on the very edge
+    vec3 inside_point = position+(x_axis+y_axis)/4.0f;
+    vec3 to_inside = inside_point - res;
+    res += to_inside / 100.0f;
 
     return res;
 }
