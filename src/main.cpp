@@ -25,7 +25,7 @@ using namespace std;
 // TODO light_hint is not very good solution!
 float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
 
-    if(depth==2)
+    if(depth==3)
         return 0.0f;
 
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
@@ -49,27 +49,19 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     //return si->position.y+1.0f;
 
     shared_ptr<const Ddf> light_ddf = lighting.distributionInPoint(si->position);
+    shared_ptr<const Ddf> mix_ddf = unite(light_ddf, 1.0f, si->sdf, 1.0f);
 
-    // Mix equally SDF distribution and light*SDF distribution!
-    // TODO Mix it with unite()!?
     vec3 new_direction;
     float res = 0.0f;
 
-    //bool cast_light = rand()%2==0;
-
     for(size_t i=0; i<10; ++i){
-        new_direction = light_ddf->trySample();
+        new_direction = mix_ddf->trySample();
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!
-            float multiplier = 1.0f/light_ddf->value(new_direction)*si->sdf->value(new_direction);
+            float multiplier = 1.0f/mix_ddf->value(new_direction)*si->sdf->value(new_direction);
             res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
         }
-
-    //    new_direction = si->sdf->trySample();
-    //    if(new_direction != vec3()){
-    //        res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
-    //    }
     }
     return isfinite(res)?res/10:0.0f;
 }
