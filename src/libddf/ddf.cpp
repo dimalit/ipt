@@ -164,9 +164,9 @@ std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const D
     using namespace ::detail;
 
     if(a==nullptr)
-        return unite(make_shared<UnionDdf>(), 1.0f, b, 1.0f);
+        return unite(make_shared<UnionDdf>(), 0.0f, b, 1.0f);
     else if(b==nullptr)
-        return unite(make_shared<UnionDdf>(), 1.0f, a, 1.0f);
+        return unite(make_shared<UnionDdf>(), 0.0f, a, 1.0f);
 
     const UnionDdf* ua = dynamic_cast<const UnionDdf*>(a.get());
     const UnionDdf* ub = dynamic_cast<const UnionDdf*>(b.get());
@@ -174,6 +174,10 @@ std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const D
     if(!ua && ub)
         return unite(b, kb, a, ka);
     if(ua){
+
+        if(ua->components.size()==0 && ka != 0.0f)
+            return unite(a, 0.0f, b, kb);
+
         if(ub){
             // add 2 arrays
             std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();  // empty
