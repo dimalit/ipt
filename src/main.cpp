@@ -34,10 +34,11 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     // 1 check light hit
     if(li.has_value() && depth>0){
         // if not obscured by geometry
-        if(!si.has_value() || length(si->position-origin) > length(li->position-origin))
+        if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
             assert(isnan(li->surface_power) || li->surface_power >= 0.0f);
             // HACK For point light
             return isfinite(li->surface_power) ? li->surface_power : 1.0f;
+        }
     }// if li
 
     if(!si.has_value())
@@ -56,7 +57,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
 
     //bool cast_light = rand()%2==0;
 
-    for(size_t i=0; i<100; ++i){
+    for(size_t i=0; i<10; ++i){
         new_direction = light_ddf->trySample();
         // possible dimming because of this
         if(new_direction != vec3()){
@@ -70,7 +71,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     //        res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
     //    }
     }
-    return isfinite(res)?res/100:0.0f;
+    return isfinite(res)?res/10:0.0f;
 }
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
@@ -133,7 +134,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 1);
+    render(scene, r_plane, 10);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
