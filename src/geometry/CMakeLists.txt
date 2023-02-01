@@ -7,6 +7,8 @@ add_library(geometry STATIC
     GeometrySphereInBox.cpp
     GeometryOpenSpheres.h
     GeometryOpenSpheres.cpp
+    FractalSpheres.h
+    FractalSpheres.cpp
 )
 target_link_libraries(geometry PRIVATE ddf)
 target_include_directories(geometry PRIVATE ..)

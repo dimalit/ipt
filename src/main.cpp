@@ -5,6 +5,7 @@
 #include <geometry/GeometrySphereInBox.h>
 #include <geometry/GeometryFloor.h>
 #include <geometry/GeometryOpenSpheres.h>
+#include <geometry/FractalSpheres.h>
 
 #include <lighting/lighting.h>
 
@@ -25,7 +26,7 @@ using namespace std;
 // TODO light_hint is not very good solution!
 float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
 
-    if(depth==3)
+    if(depth==4)
         return 0.0f;
 
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
@@ -63,7 +64,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
             res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
         }
     }
-    return isfinite(res)?res/10:0.0f;
+    return isfinite(res)?res/10 :0.0f;
 }
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
@@ -103,7 +104,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
     }// for sample
 }
 
-int main(){
+Scene make_scene_box(){
 
     shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
 
@@ -118,11 +119,30 @@ int main(){
     //lighting->addOuterLight(10);
 
     shared_ptr<Geometry> geometry = make_shared<GeometrySphereInBox>();
+
     vec3 camera_pos(0.0f, -3.0f, 0.1f);
     vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
     shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
 
-    Scene scene{geometry, lighting, camera};
+    return Scene{geometry, lighting, camera};
+}
+
+Scene make_scene_fractal(){
+    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
+    lighting->addSphereLight(vec3(-5,0,0), 2);
+
+    shared_ptr<Geometry> geometry = make_shared<FractalSpheres>();
+
+    vec3 camera_pos(0.0f, -3.0f, 0.0f);
+    vec3 camera_dir = vec3(0,1,0);
+    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
+
+    return Scene{geometry, lighting, camera};
+}
+
+int main(){
+
+    Scene scene = make_scene_fractal();
 
     GridRenderPlane r_plane(640, 640);
 
