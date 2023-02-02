@@ -159,8 +159,9 @@ float UnionDdf::value( vec3 arg ) const {
 
 }//namespace detail
 
-std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const Ddf> b, float kb){
+using namespace ::detail;
 
+std::shared_ptr<Ddf> unite(shared_ptr<const UnionDdf> a, float ka, shared_ptr<const UnionDdf> b, float kb){
     using namespace ::detail;
 
     if(a==nullptr)
@@ -168,53 +169,73 @@ std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const D
     else if(b==nullptr)
         return unite(make_shared<UnionDdf>(), 0.0f, a, 1.0f);
 
-    const UnionDdf* ua = dynamic_cast<const UnionDdf*>(a.get());
-    const UnionDdf* ub = dynamic_cast<const UnionDdf*>(b.get());
+    if(a->components.size()==0 && ka != 0.0f)
+        return unite(a, 0.0f, b, kb);
 
-    if(!ua && ub)
-        return unite(b, kb, a, ka);
-    if(ua){
+    // add 2 arrays
+    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();  // empty
 
-        if(ua->components.size()==0 && ka != 0.0f)
-            return unite(a, 0.0f, b, kb);
+    // copy a components and weights
+    std::copy(a->components.begin(), a->components.end(), res->components.end());
+    std::for_each(a->weights.begin(), a->weights.end(), [&res,ka,kb](float k){
+        res->weights.push_back(k*ka/(ka+kb));
+    });
+    // copy b components and weights
+    std::copy(b->components.begin(), b->components.end(), res->components.end());
+    std::for_each(b->weights.begin(), b->weights.end(), [&res,ka,kb](float k){
+        res->weights.push_back(k*kb/(ka+kb));
+    });
+    return res;
+}
 
-        if(ub){
-            // add 2 arrays
-            std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();  // empty
+std::shared_ptr<Ddf> unite(shared_ptr<const UnionDdf> a, float ka, shared_ptr<const Ddf> b, float kb){
+    using namespace ::detail;
 
-            // copy a components and weights
-            std::copy(ua->components.begin(), ua->components.end(), res->components.end());
-            std::for_each(ua->weights.begin(), ua->weights.end(), [&res,ka,kb](float k){
-                res->weights.push_back(k*ka/(ka+kb));
-            });
-            // copy b components and weights
-            std::copy(ub->components.begin(), ub->components.end(), res->components.end());
-            std::for_each(ub->weights.begin(), ub->weights.end(), [&res,ka,kb](float k){
-                res->weights.push_back(k*kb/(ka+kb));
-            });
-            return res;
-        }
-        else{
-            // add b to array a
-            std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>(*ua);  // copy
-            // re-weigh
-            std::for_each(res->weights.begin(), res->weights.end(), [ka,kb](float& k){
-                k*=ka/(ka+kb);
-            });
-            res->components.push_back(b);
-            res->weights.push_back(kb/(ka+kb));
-            return res;
-        }
-    }
-    else{
-        // add two simple distributions
-        std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
-        res->components.push_back(a);
-        res->weights.push_back(ka/(ka+kb));
-        res->components.push_back(b);
-        res->weights.push_back(kb/(ka+kb));
-        return res;
-    }
+    if(a==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
+    else if(b==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+
+    if(a->components.size()==0 && ka != 0.0f)
+        return unite(a, 0.0f, b, kb);
+
+    // add b to array a
+    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>(*a);  // copy
+    // re-weigh
+    std::for_each(res->weights.begin(), res->weights.end(), [ka,kb](float& k){
+        k*=ka/(ka+kb);
+    });
+    res->components.push_back(b);
+    res->weights.push_back(kb/(ka+kb));
+    return res;
+}
+
+std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const UnionDdf> b, float kb){
+    using namespace ::detail;
+
+    if(a==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
+    else if(b==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+
+    return unite(b, kb, a, ka);
+}
+
+std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const Ddf> b, float kb){
+    using namespace ::detail;
+
+    if(a==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
+    else if(b==nullptr)
+        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+
+    // add two simple distributions
+    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
+    res->components.push_back(a);
+    res->weights.push_back(ka/(ka+kb));
+    res->components.push_back(b);
+    res->weights.push_back(kb/(ka+kb));
+    return res;
 }
 
 // NB res and args can be null!
