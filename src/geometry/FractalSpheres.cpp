@@ -40,35 +40,43 @@ void generate_spheres(float r1, vec3 c1, float r2, vec3 c2, function<bool(float 
     generate_spheres(r3, c3, r2, c2, callback);
 }
 
-optional<surface_intersection> FractalSpheres::traceRay(vec3 origin, vec3 direction) const {
+FractalSpheres::FractalSpheres(){
+
     float r1 = 1.0f;
     vec3 c1 = vec3(-2,0,0);
     float r2 = 1.0f;
     vec3 c2 = vec3(2,0,0);
 
+    auto add_sphere = [this](float r, vec3 c)->bool {
+
+        if(r<0.01)
+            return true;
+        rs.push_back(r);
+        cs.push_back(c);
+        return false;
+    };
+
+    add_sphere(r1, c1);
+    add_sphere(r2, c2);
+    generate_spheres(r1, c1, r2, c2, add_sphere);
+}
+
+optional<surface_intersection> FractalSpheres::traceRay(vec3 origin, vec3 direction) const {
+
     float res_r;
     vec3 res_c;
     float res_dist = numeric_limits<float>::infinity();
 
-    auto sphere_callback = [origin, direction, &res_r, &res_c, &res_dist](float r, vec3 c)->bool {
-
-        if(r<0.01)
-            return true;
-
-        //cout << r << " " << c.x << endl;
-
+    for(size_t i=0; i<rs.size(); ++i){
+        float r = rs[i];
+        vec3 c = cs[i];
         float dist = intersection_with_sphere(r, origin-c, direction);
         if(isfinite(dist) && std::abs(dist)>1e-6 && dist < res_dist){
             res_r = r;
             res_c = c;
             res_dist = dist;
         }// if intersect
-        return false;
-    };
-
-    sphere_callback(r1, c1);
-    sphere_callback(r2, c2);
-    generate_spheres(r1, c1, r2, c2, sphere_callback);
+    }
 
     if(!isfinite(res_dist))
         return {};
