@@ -85,8 +85,7 @@ float LightToDistribution::value( glm::vec3 direction ) const {
     assert(cosinus > -1e-5);
     if(cosinus<0.0f)
         return 0.0f;
-    float distance = length(inter->position-origin);
-    float decay = pow(distance, 2);
+    float decay = dot(inter->position-origin, inter->position-origin);
     return decay/cosinus/light->area;
 }
 

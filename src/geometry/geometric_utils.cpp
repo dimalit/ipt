@@ -31,11 +31,17 @@ float intersection_with_sphere(float radius, vec3 origin, vec3 direction){
     // o^2 + 2*o*d*t + d^2*t^2 = r^2
     // desc = (2od)^2 - 4*d^2*(o^2-r^2)
     // res = (-2od +- sqrt(desc)) / (2d^2)
-    float desc = 4.0f*pow(dot(origin, direction), 2.0f) - 4.0f*dot(direction,direction)*(dot(origin,origin)-radius*radius);
+
+    // pre-compute common values
+    float origin_x_dir = dot(origin, direction);
+    // end
+
+    float desc = 4.0f*pow(origin_x_dir, 2.0f) - 4.0f*(dot(origin,origin)-radius*radius);
     if(desc < 0.0f)
         return std::numeric_limits<float>::infinity();
-    float t1 = (-2.0*dot(origin, direction) - sqrt(desc)) / 2.0 / dot(direction, direction);
-    float t2 = (-2.0*dot(origin, direction) + sqrt(desc)) / 2.0 / dot(direction, direction);
+    float sqrt_desc = sqrt(desc);
+    float t1 = (-2.0*origin_x_dir - sqrt_desc) / 2.0;
+    float t2 = (-2.0*origin_x_dir + sqrt_desc) / 2.0;
     if(t1<1e-6)
         t1 = std::numeric_limits<float>::infinity();
     if(t2<1e-6)

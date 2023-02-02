@@ -21,16 +21,18 @@ void generate_spheres(float r1, vec3 c1, float r2, vec3 c2, function<bool(float 
     if(L<0.01)
         return;
 
-    float alpha = asin(r1/(r1+L));
-    float beta  = asin(r2/(r2+L));
+    float sin_alpha = r1/(r1+L);
+    float alpha = asin(sin_alpha);
+    float sin_beta = r2/(r2+L);
+    float beta  = asin(sin_beta);
     float gamma = M_PIf32 - alpha - beta;
     assert(gamma > 0.0f);
 
-    float A=L*sin(alpha)/sin(gamma);
+    float A=L*sin_alpha/sin(gamma);
     float x = A*sin(gamma/2)/sin(M_PIf32-beta-gamma/2);
 
     c3 = c1+normalize(c2-c1)*(x+r1);
-    r3 = x*sin(beta);
+    r3 = x*sin_beta;
 
     if(callback(r3, c3))
         return;

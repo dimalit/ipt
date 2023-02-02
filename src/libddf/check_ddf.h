@@ -34,7 +34,7 @@ public:
 
         float area_density = 1.0/side/side;
         float cosinus=arg.z;
-        float angular_density = area_density*pow(glm::length(inter), 2)/cosinus;
+        float angular_density = area_density*glm::dot(inter, inter)/cosinus;
         return angular_density;
     }
 };
