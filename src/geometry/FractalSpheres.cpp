@@ -13,7 +13,7 @@
 using namespace glm;
 using namespace std;
 
-void generate_spheres(float r1, vec3 c1, float r2, vec3 c2, function<bool(float r, vec3 c)> callback){
+void generate_spheres(float r1, vec3 c1, float r2, vec3 c2, bool light_from_left, function<bool(float r, vec3 c)> callback){
     float r3;
     vec3 c3;
 
@@ -36,21 +36,26 @@ void generate_spheres(float r1, vec3 c1, float r2, vec3 c2, function<bool(float 
 
     if(callback(r3, c3))
         return;
-    generate_spheres(r1, c1, r3, c3, callback);
-    generate_spheres(r3, c3, r2, c2, callback);
+    if(light_from_left)
+        generate_spheres(r1, c1, r3, c3, !light_from_left, callback);
+    else
+        generate_spheres(r3, c3, r2, c2, !light_from_left, callback);
 }
 
 FractalSpheres::FractalSpheres(){
 
-    float r1 = 1.0f;
+    float r1 = 0.5f;
     vec3 c1 = vec3(-2,0,0);
-    float r2 = 1.0f;
+    float r2 = 0.5f;
     vec3 c2 = vec3(2,0,0);
 
     auto add_sphere = [this](float r, vec3 c)->bool {
 
-        if(r<0.01)
+        if(r<0.001)
             return true;
+
+        cout << c.x << " " << r << endl;
+
         rs.push_back(r);
         cs.push_back(c);
         return false;
@@ -58,7 +63,7 @@ FractalSpheres::FractalSpheres(){
 
     add_sphere(r1, c1);
     add_sphere(r2, c2);
-    generate_spheres(r1, c1, r2, c2, add_sphere);
+    generate_spheres(r1, c1, r2, c2, true, add_sphere);
 }
 
 optional<surface_intersection> FractalSpheres::traceRay(vec3 origin, vec3 direction) const {

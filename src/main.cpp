@@ -26,7 +26,7 @@ using namespace std;
 // TODO light_hint is not very good solution!
 float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
 
-    if(depth==4)
+    if(depth==6)
         return 0.0f;
 
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
@@ -96,7 +96,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         r_plane.addRay(x, y, value);
 
         }// for x
-        cout << iy << endl;
+        //cout << iy << endl;
         }// for y
 
         cout << "Sample " << sample << " / " << n_samples << " OK" << endl;
@@ -129,11 +129,11 @@ Scene make_scene_box(){
 
 Scene make_scene_fractal(){
     shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-    lighting->addSphereLight(vec3(-5,0,0), 2);
+    lighting->addSphereLight(vec3(-5.5,0,0), 1);
 
     shared_ptr<Geometry> geometry = make_shared<FractalSpheres>();
 
-    vec3 camera_pos(0.0f, -3.0f, 0.0f);
+    vec3 camera_pos(0.0f, -4.0f, 0.0f);
     vec3 camera_dir = vec3(0,1,0);
     shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
 
@@ -146,7 +146,7 @@ int main(){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 10);
+    render(scene, r_plane, 100);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
@@ -158,7 +158,7 @@ int main(){
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
-    float gamma = 0.6f;
+    float gamma = 0.1f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
             float value = r_plane.pixels[y*r_plane.width+x]/r_plane.max_value;
