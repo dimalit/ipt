@@ -15,7 +15,7 @@ struct intersection {
 
 struct surface_intersection: public intersection {
     float curvature;		// my addition
-    std::shared_ptr<const Ddf> sdf;
+    std::unique_ptr<Ddf> sdf;
     float albedo = 1.0f;
 };
 
@@ -28,7 +28,7 @@ struct Geometry {
 };
 
 struct Lighting {
-    virtual std::shared_ptr<const Ddf> distributionInPoint(glm::vec3 pos) const = 0;
+    virtual std::unique_ptr<Ddf> distributionInPoint(glm::vec3 pos) const = 0;
     virtual std::optional<light_intersection> traceRayToLight(glm::vec3 origin, glm::vec3 direction) const = 0;
     static light_intersection last_sample;
 };

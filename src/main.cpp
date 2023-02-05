@@ -49,8 +49,11 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     //DEBUG for geometry debugging
     //return si->position.y+1.0f;
 
-    shared_ptr<const Ddf> light_ddf = lighting.distributionInPoint(si->position);
-    shared_ptr<const Ddf> mix_ddf = unite(light_ddf, 1.0f, si->sdf, 1.0f);
+    // TODO better solution?
+    Ddf* sdf_tmp = si->sdf.get();
+
+    unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
+    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
 
     vec3 new_direction;
     float res = 0.0f;
@@ -60,7 +63,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!
-            float multiplier = 1.0f/mix_ddf->value(new_direction)*si->sdf->value(new_direction);
+            float multiplier = 1.0f/mix_ddf->value(new_direction)*sdf_tmp->value(new_direction);
             res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
         }
     }

@@ -6,7 +6,7 @@
 
 struct Light {
     virtual std::optional<light_intersection> traceRay(glm::vec3 origin, glm::vec3 direction) const = 0;
-    virtual std::shared_ptr<const Ddf> lightToPoint(glm::vec3 pos) const;
+    virtual std::unique_ptr<Ddf> lightToPoint(glm::vec3 pos) const;
     float power;
     float area;
     glm::vec3 position;

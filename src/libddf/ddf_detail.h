@@ -13,14 +13,14 @@ namespace detail {
 
 // TODO hide t from interface?
 struct TransformDdf: public Ddf {
-    std::shared_ptr<const Ddf> origin;
+    std::shared_ptr<Ddf> origin;
     glm::mat3 transformation;
-    TransformDdf(std::shared_ptr<const Ddf> origin, glm::mat3 transformation){
-        this->origin = std::dynamic_pointer_cast<const Ddf>(origin);
+    TransformDdf(std::shared_ptr<Ddf> origin, glm::mat3 transformation){
+        this->origin = std::dynamic_pointer_cast<Ddf>(origin);
         assert(this->origin);
         this->transformation = transformation;
         // XXX best-guess
-        this->max_value = dynamic_cast<const Ddf*>(origin.get())->max_value;
+        this->max_value = dynamic_cast<Ddf*>(origin.get())->max_value;
     }
     virtual glm::vec3 trySample() const override {
         glm::vec3 x = origin->trySample();
@@ -70,7 +70,7 @@ public:
 
 // TODO bad idea to inherit implementation!
 struct RotateDdf: public detail::TransformDdf {
-    RotateDdf(std::shared_ptr<const Ddf> origin, glm::vec3 to)
+    RotateDdf(std::shared_ptr<Ddf> origin, glm::vec3 to)
         :TransformDdf(origin, glm::mat3()){
         glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis = cross(z, to);
@@ -84,9 +84,9 @@ struct RotateDdf: public detail::TransformDdf {
 
 // TODO Probably this should exist as already chain of 2
 struct InvertDdf: public Ddf {
-    std::shared_ptr<const Ddf> origin;
-    InvertDdf(std::shared_ptr<const Ddf> origin, float min_value){
-        this->origin = std::dynamic_pointer_cast<const Ddf>(origin);
+    std::shared_ptr<Ddf> origin;
+    InvertDdf(std::shared_ptr<Ddf> origin, float min_value){
+        this->origin = std::dynamic_pointer_cast<Ddf>(origin);
         assert(this->origin);
         this->max_value = 1.0f/min_value;
     }

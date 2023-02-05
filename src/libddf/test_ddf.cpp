@@ -79,27 +79,31 @@ void test_sampling_ddfs(){
 
 void test_superposition(){
 
-    shared_ptr<const Ddf> sup_self = chain(make_shared<UpperHalfDdf>(), make_shared<UpperHalfDdf>());
+    unique_ptr<Ddf> sup_self = chain(make_unique<UpperHalfDdf>(), make_unique<UpperHalfDdf>());
 
     cout << "UpperHalfDdf * 2:" << endl;
     cout << (check_ddf(*sup_self) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-    shared_ptr<const Ddf> right_half = make_shared<RotateDdf>(make_shared<UpperHalfDdf>(), vec3(1,0,0));
-    shared_ptr<const Ddf> cosine = make_shared<CosineDdf>();
-    shared_ptr<const Ddf> half_cosine = chain(right_half, cosine);
+    unique_ptr<Ddf> right_half = make_unique<RotateDdf>(make_unique<UpperHalfDdf>(), vec3(1,0,0));
+    unique_ptr<Ddf> cosine = make_unique<CosineDdf>();
+    unique_ptr<Ddf> half_cosine = chain(move(right_half), move(cosine));
 
     cout << "Right half-cosine:" << endl;
     cout << (check_ddf(*half_cosine, false) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-    shared_ptr<const Ddf> square = make_shared<SquareDdfForTest>(1.0f);
+    unique_ptr<Ddf> square = make_unique<SquareDdfForTest>(1.0f);
     cout << "Plain 1x1 square:" << endl;
     cout << (check_ddf(*square, true, 40, 20) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-    shared_ptr<const Ddf> square_over_cosine = chain(square, cosine);
-    shared_ptr<const Ddf> tilted_square_over_cosine = chain(make_shared<RotateDdf>(square, normalize(vec3(1,1,1))), cosine);
+    square = make_unique<SquareDdfForTest>(1.0f);
+    cosine = make_unique<CosineDdf>();
+    unique_ptr<Ddf> square_over_cosine = chain(move(square), move(cosine));
+    square = make_unique<SquareDdfForTest>(1.0f);
+    cosine = make_unique<CosineDdf>();
+    unique_ptr<Ddf> tilted_square_over_cosine = chain(make_unique<RotateDdf>(move(square), normalize(vec3(1,1,1))), move(cosine));
 
     cout << "Square over cosine:" << endl;
     cout << (check_ddf(*square_over_cosine, false, 40, 20) ? "OK" : "FAIL") << endl;
@@ -110,10 +114,11 @@ void test_superposition(){
     cout << endl;
 
     // Very important case: square over inverse itself!
-    shared_ptr<const Ddf> big_square = make_shared<SquareDdfForTest>(10.0f);
-    float min_value = big_square->value(vec3(0,0,1));
-    shared_ptr<const Ddf> inverse = make_shared<InvertDdf>(big_square, min_value);
-    shared_ptr<const Ddf> square_over_inverse = chain(big_square, inverse);
+    // TODO do same copy trick in other tests
+    SquareDdfForTest big_square(10.0f);
+    float min_value = big_square.value(vec3(0,0,1));
+    unique_ptr<Ddf> inverse = make_unique<InvertDdf>(make_unique<SquareDdfForTest>(big_square), min_value);
+    unique_ptr<Ddf> square_over_inverse = chain(make_unique<SquareDdfForTest>(big_square), move(inverse));
 
     cout << "Big square over inverse itself:" << endl;
     cout << (check_ddf(*square_over_inverse, false) ? "OK" : "FAIL") << endl;
@@ -121,36 +126,39 @@ void test_superposition(){
 }
 
 void test_union(){
-    shared_ptr<const Ddf> right = make_shared<RotateDdf>(make_shared<SquareDdfForTest>(), normalize(vec3(1,0,1)));
-    shared_ptr<const Ddf> left  = make_shared<RotateDdf>(make_shared<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
+    unique_ptr<Ddf> right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
+    unique_ptr<Ddf> left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
 
-    shared_ptr<const Ddf> both  = unite(left, 1.0f, right, 1.0f);
+    unique_ptr<Ddf> both  = unite(move(left), 1.0f, move(right), 1.0f);
 
     cout << "Union left+right square:" << endl;
     cout << (check_ddf(*both, true, 40, 40) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-    shared_ptr<const Ddf> unequal  = unite(left, 1.0f, right, 2.5f);
+    right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
+    left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
+    shared_ptr<Ddf> unequal  = unite(move(left), 1.0f, move(right), 2.5f);
 
     cout << "Union left 1 + right 2.5:" << endl;
     cout << (check_ddf(*unequal, true, 40, 40) ? "OK" : "FAIL") << endl;
     cout << endl;
 
-    shared_ptr<const Ddf> right_on_horizon = chain(make_shared<RotateDdf>(make_shared<SquareDdfForTest>(), vec3(1,0,0)), make_shared<UpperHalfDdf>());
+    unique_ptr<Ddf> right_on_horizon = chain(make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), vec3(1,0,0)), make_unique<UpperHalfDdf>());
     cout << "Right 1/2 on horizon:" << endl;
     cout << (check_ddf(*right_on_horizon, false, 80, 80) ? "OK" : "FAIL") << endl;
     cout << endl;
 
     // TODO check here that integral equal 2.25/3.5=0.64 (it is)
-    shared_ptr<const Ddf> unequal_with_horizon = unite(left, 1.0f, right_on_horizon, 2.5f);
+    left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
+    unique_ptr<Ddf> unequal_with_horizon = unite(move(left), 1.0f, move(right_on_horizon), 2.5f);
     cout << "Union left 1 + right 1/2 on horizon 2.5:" << endl;
     cout << (check_ddf(*unequal_with_horizon, false, 40, 40) ? "OK" : "FAIL") << endl;
     cout << endl;
 }
 
 int main(){
-//    test_ddf_basic();
-//    test_sampling_ddfs();
+    test_ddf_basic();
+    test_sampling_ddfs();
     test_superposition();
 
     test_union();

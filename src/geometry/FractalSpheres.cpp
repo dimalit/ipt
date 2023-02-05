@@ -91,7 +91,7 @@ optional<surface_intersection> FractalSpheres::traceRay(vec3 origin, vec3 direct
     res.normal = normalize(res.position - res_c);
     res.albedo = 1.0f;
     res.curvature = 1.0f/res_r;
-    res.sdf = make_shared<RotateDdf>(make_shared<CosineDdf>(), res.normal);
+    res.sdf = make_unique<RotateDdf>(make_unique<CosineDdf>(), res.normal);
 
-    return res;
+    return move(res);
 }

@@ -48,10 +48,10 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
         // material
         res.normal = -planes[intersected_plane];   // inside
 
-        shared_ptr<const Ddf> dis = make_shared<const CosineDdf>();
+        unique_ptr<Ddf> dis = make_unique<CosineDdf>();
 
-        shared_ptr<RotateDdf> rotate = make_shared<RotateDdf>(dis, res.normal);
-        res.sdf = rotate;
+        unique_ptr<RotateDdf> rotate = make_unique<RotateDdf>(move(dis), res.normal);
+        res.sdf = move(rotate);
     }
     else if(intersected_sphere){
         res.curvature = 2.0f;
@@ -61,22 +61,22 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
         vec3 reflection = reflect(direction, res.normal);
         float eye_angle_cos = dot(-direction, res.normal);
 
-        shared_ptr<const Ddf> diffuse = make_shared<const CosineDdf>();
-        // DEBUG temporary skip: shared_ptr<const Ddf> specular = make_shared<const MirrorDdf>(0.2f);
+        unique_ptr<Ddf> diffuse = make_unique<CosineDdf>();
+        // DEBUG temporary skip: shared_ptr<Ddf> specular = make_shared<const MirrorDdf>(0.2f);
 
-        shared_ptr<RotateDdf> rotate_diffuse = make_shared<RotateDdf>(diffuse, res.normal);
+        unique_ptr<RotateDdf> rotate_diffuse = make_unique<RotateDdf>(move(diffuse), res.normal);
 
         //shared_ptr<RotateDdf> rotate_specular = make_shared<RotateDdf>(reflection);
         //rotate_specular->origin = specular;
-        shared_ptr<RotateDdf> rotate_cap = make_shared<RotateDdf>(make_shared<UpperHalfDdf>(), res.normal);
+        unique_ptr<RotateDdf> rotate_cap = make_unique<RotateDdf>(make_unique<UpperHalfDdf>(), res.normal);
 
-        //shared_ptr<const Ddf> dist = unite(rotate_diffuse, ::apply(rotate_specular, rotate_cap));
+        //shared_ptr<Ddf> dist = unite(rotate_diffuse, ::apply(rotate_specular, rotate_cap));
 
-        res.sdf = rotate_diffuse;
+        res.sdf = move(rotate_diffuse);
     }
     else {
         return {};
     }
 
-    return res;
+    return move(res);
 }

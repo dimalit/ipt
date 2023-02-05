@@ -113,8 +113,8 @@ float LightToChainedDistribution::value( glm::vec3 direction ) const {
         return 0.0f;
 }
 
-std::shared_ptr<const Ddf> Light::lightToPoint(glm::vec3 pos) const {
-    return std::make_shared<const LightToDistribution>(this, pos);
+unique_ptr<Ddf> Light::lightToPoint(glm::vec3 pos) const {
+    return make_unique<LightToDistribution>(this, pos);
 }
 
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){

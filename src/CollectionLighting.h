@@ -9,7 +9,7 @@ class Light;
 
 struct CollectionLighting: public Lighting {
     std::vector<std::shared_ptr<const Light>> lights;
-    virtual std::shared_ptr<const Ddf> distributionInPoint(glm::vec3 pos) const;
+    virtual std::unique_ptr<Ddf> distributionInPoint(glm::vec3 pos) const;
     virtual std::optional<light_intersection> traceRayToLight(glm::vec3 origin, glm::vec3 direction) const;
 
     void addPointLight(glm::vec3 position, float virtual_radius, float power=1.0f);

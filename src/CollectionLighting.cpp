@@ -9,18 +9,18 @@
 using namespace glm;
 using namespace std;
 
-shared_ptr<const Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) const {
-    std::shared_ptr<const Ddf> res = unite();
+unique_ptr<Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) const {
+    std::unique_ptr<Ddf> res = unite();
     float acc_power = 0.0f;
     for(shared_ptr<const Light> l: lights){
-        shared_ptr<const Ddf> light_ddf = l->lightToPoint(pos);
+        unique_ptr<Ddf> light_ddf = l->lightToPoint(pos);
 //        vec3 nearest_point = l->nearestPointTo(pos);
 //        float light_ddf_min = light_ddf->value(normalize(nearest_point-pos));
-//        shared_ptr<const Ddf> mix = chain(light_ddf, make_shared<InvertDdf>(light_ddf, light_ddf_min));
+//        shared_ptr<Ddf> mix = chain(light_ddf, make_shared<InvertDdf>(light_ddf, light_ddf_min));
         // TODO max_value==0 means light cannot shine here: design this in a better way!
         if(light_ddf->max_value == 0.0f)
             continue;
-        res = unite(res, acc_power, light_ddf, l->power);
+        res = unite(move(res), acc_power, move(light_ddf), l->power);
         acc_power += l->power;
     }
     return res;

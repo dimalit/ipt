@@ -34,7 +34,7 @@ float bucket_area(size_t alpha_bucket, size_t phi_bucket){
     return dx*dy;
 }
 
-void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
+void mc_integral_and_max(Ddf& ddf, float& ddf_integral, float& ddf_max){
 
     SphericalDdf sph;
 
@@ -56,7 +56,7 @@ void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
     ddf_integral *= 4.0f*M_PI/N;
 }
 
-void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
+void rects_integral_and_max(Ddf& ddf, float& ddf_integral, float& ddf_max){
     for(size_t i=0; i<20; ++i){
         for(size_t j=0; j<20; ++j){
             float alpha = alpha_from_i(i);
@@ -71,7 +71,7 @@ void rects_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max)
 }
 
 
-bool check_ddf(const Ddf& ddf){
+bool check_ddf(Ddf& ddf){
     // 1 compute ddf integral and max
 
     float ddf_integral;

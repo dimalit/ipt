@@ -4,6 +4,7 @@
 #include <glm/vec3.hpp>
 
 #include <memory>
+#include <iostream>
 
 struct Ddf {
 
@@ -22,9 +23,26 @@ struct Ddf {
     bool isSingular() const {
         return max_value == std::numeric_limits<float>::infinity();
     }
+
+    static size_t object_counter;
+
+    Ddf(){
+        ++object_counter;
+        static size_t max = 0;
+        if(object_counter>max){
+            max=object_counter;
+            std::cout << "COUNT " << max << std::endl;
+        }
+        //std::cout << "COUNT " << object_counter << " / " << max << std::endl;
+    }
+
+    virtual ~Ddf(){
+        --object_counter;
+        //std::cout << "COUNT " << object_counter << std::endl;
+    }
 };
 
-extern std::shared_ptr<Ddf> unite(std::shared_ptr<const Ddf> a = nullptr, float ka=1.0f, std::shared_ptr<const Ddf> b = nullptr, float kb=1.0f);
-extern std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest);
+extern std::unique_ptr<Ddf> unite(std::unique_ptr<Ddf> a = nullptr, float ka=1.0f, std::unique_ptr<Ddf> b = nullptr, float kb=1.0f);
+extern std::unique_ptr<Ddf> chain(std::unique_ptr<Ddf> source, std::unique_ptr<Ddf> dest);
 
 #endif // DDF_H

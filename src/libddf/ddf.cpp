@@ -9,6 +9,8 @@
 using namespace glm;
 using namespace std;
 
+size_t Ddf::object_counter = 0;
+
 bool p_hit(float prob){
     return randf() < prob;
 }
@@ -69,15 +71,16 @@ float CosineDdf::value( vec3 arg ) const {
 
 namespace detail {
 
+template<class P=Ddf*>
 class SuperpositionDdf: public Ddf {
 
 private:
-    std::shared_ptr<const Ddf> source, dest;
-    static float magic_compute_max_pdf(const Ddf* source, const Ddf* dest);
+    P source, dest;
+    static float magic_compute_max_pdf(Ddf* source, Ddf* dest);
 
 public:
 
-    SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest);
+    SuperpositionDdf(P _source, P _dest);
 
     virtual float value( glm::vec3 x ) const override {
         return source->value(x) * dest->value(x) / dest->max_value;
@@ -88,8 +91,9 @@ public:
 
 // TODO Indicate somehow that trySample should always succeed!
 struct UnionDdf: public Ddf {
-    std::vector< std::shared_ptr<const Ddf> > components;
-    std::vector< float > weights;
+    vector< unique_ptr<Ddf> > components;
+    vector< float > weights;
+    vector< unique_ptr<Ddf> > owning_pointers;
     UnionDdf(){
     }
     // weight eqals to sum of weights
@@ -97,10 +101,9 @@ struct UnionDdf: public Ddf {
     virtual float value( vec3 arg ) const override;
 };
 
-SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shared_ptr<const Ddf> _dest) {
-
-    source = std::dynamic_pointer_cast<const Ddf>(_source);
-    dest   = std::dynamic_pointer_cast<const Ddf>(_dest);
+template<class P>
+SuperpositionDdf<P>::SuperpositionDdf(P _source, P _dest)
+    :source(move(_source)), dest(move(_dest)){
 
     assert(source && dest);
     assert(!source->isSingular() || !dest->isSingular());
@@ -116,7 +119,8 @@ SuperpositionDdf::SuperpositionDdf(std::shared_ptr<const Ddf> _source, std::shar
     //full_theoretical_weight *= dest->max_value;    // and mult by source_integal, but this is implicit
 }
 
-vec3 SuperpositionDdf::trySample() const {
+template<class P>
+vec3 SuperpositionDdf<P>::trySample() const {
 
     vec3 x = source->trySample();
     if(x == vec3())         // fail if fail
@@ -161,85 +165,76 @@ float UnionDdf::value( vec3 arg ) const {
 
 using namespace ::detail;
 
-std::shared_ptr<Ddf> unite(shared_ptr<const UnionDdf> a, float ka, shared_ptr<const UnionDdf> b, float kb){
+std::unique_ptr<Ddf> unite(unique_ptr<Ddf> a, float ka, unique_ptr<Ddf> b, float kb){
     using namespace ::detail;
 
     if(a==nullptr)
-        return unite(make_shared<UnionDdf>(), 0.0f, b, 1.0f);
+        return unite(make_unique<UnionDdf>(), 0.0f, move(b), 1.0f);
     else if(b==nullptr)
-        return unite(make_shared<UnionDdf>(), 0.0f, a, 1.0f);
+        return unite(make_unique<UnionDdf>(), 0.0f, move(a), 1.0f);
 
-    if(a->components.size()==0 && ka != 0.0f)
-        return unite(a, 0.0f, b, kb);
+    UnionDdf* ua = dynamic_cast<UnionDdf*>(a.get());
+    UnionDdf* ub = dynamic_cast<UnionDdf*>(b.get());
 
-    // add 2 arrays
-    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();  // empty
+    if(!ua && ub)
+        return unite(move(b), kb, move(a), ka);
 
-    // copy a components and weights
-    std::copy(a->components.begin(), a->components.end(), res->components.end());
-    std::for_each(a->weights.begin(), a->weights.end(), [&res,ka,kb](float k){
-        res->weights.push_back(k*ka/(ka+kb));
-    });
-    // copy b components and weights
-    std::copy(b->components.begin(), b->components.end(), res->components.end());
-    std::for_each(b->weights.begin(), b->weights.end(), [&res,ka,kb](float k){
-        res->weights.push_back(k*kb/(ka+kb));
-    });
-    return res;
-}
+    else if(ua && ub) {
 
-std::shared_ptr<Ddf> unite(shared_ptr<const UnionDdf> a, float ka, shared_ptr<const Ddf> b, float kb){
-    using namespace ::detail;
+        if(ua->components.size()==0 && ka != 0.0f)
+            return unite(nullptr, 0.0f, move(b), kb);
 
-    if(a==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
-    else if(b==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+        // add 2 arrays
+        std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();  // empty
 
-    if(a->components.size()==0 && ka != 0.0f)
-        return unite(a, 0.0f, b, kb);
+        // copy ua components and weights
+        std::move(ua->components.begin(), ua->components.end(), res->components.end());
+        std::move(ua->owning_pointers.begin(), ua->owning_pointers.end(), res->owning_pointers.end());
+        std::for_each(ua->weights.begin(), ua->weights.end(), [&res,ka,kb](float k){
+            res->weights.push_back(k*ka/(ka+kb));
+        });
 
-    // add b to array a
-    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>(*a);  // copy
-    // re-weigh
-    std::for_each(res->weights.begin(), res->weights.end(), [ka,kb](float& k){
-        k*=ka/(ka+kb);
-    });
-    res->components.push_back(b);
-    res->weights.push_back(kb/(ka+kb));
-    return res;
-}
+        // copy b components and weights
+        std::move(ub->components.begin(), ub->components.end(), res->components.end());
+        std::move(ub->owning_pointers.begin(), ub->owning_pointers.end(), res->owning_pointers.end());
+        std::for_each(ub->weights.begin(), ub->weights.end(), [&res,ka,kb](float k){
+            res->weights.push_back(k*kb/(ka+kb));
+        });
 
-std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const UnionDdf> b, float kb){
-    using namespace ::detail;
+        return res;
+    }
+    else if(ua && !ub){
 
-    if(a==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
-    else if(b==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+        if(ua->components.size()==0 && ka != 0.0f)
+            return unite(nullptr, 0.0f, move(b), kb);
 
-    return unite(b, kb, a, ka);
-}
+        // add b to array ua
+        std::unique_ptr<UnionDdf> res(ua);
+        a.release();
+        // re-weigh
+        std::for_each(res->weights.begin(), res->weights.end(), [ka,kb](float& k){
+            k*=ka/(ka+kb);
+        });
+        res->components.push_back(move(b));
+        res->weights.push_back(kb/(ka+kb));
+        return res;
 
-std::shared_ptr<Ddf> unite(shared_ptr<const Ddf> a, float ka, shared_ptr<const Ddf> b, float kb){
-    using namespace ::detail;
+    }
+    else {
 
-    if(a==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, b, 1.0f);
-    else if(b==nullptr)
-        return unite(make_shared<const UnionDdf>(), 0.0f, a, 1.0f);
+        // add two simple distributions
+        std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
+        res->components.push_back(move(a));
+        res->weights.push_back(ka/(ka+kb));
+        res->components.push_back(move(b));
+        res->weights.push_back(kb/(ka+kb));
+        return res;
 
-    // add two simple distributions
-    std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
-    res->components.push_back(a);
-    res->weights.push_back(ka/(ka+kb));
-    res->components.push_back(b);
-    res->weights.push_back(kb/(ka+kb));
-    return res;
+    }// else
 }
 
 // NB res and args can be null!
-std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_ptr<const Ddf> dest){
+unique_ptr<Ddf> chain(unique_ptr<Ddf> source, unique_ptr<Ddf> dest){
 
     using namespace ::detail;
 
@@ -248,49 +243,65 @@ std::shared_ptr<const Ddf> chain(std::shared_ptr<const Ddf> source, std::shared_
     if(!dest)
         return source;
 
-    const UnionDdf* u_source = dynamic_cast<const UnionDdf*>(source.get());
-    const UnionDdf* u_dest = dynamic_cast<const UnionDdf*>(dest.get());
+    UnionDdf* u_source = dynamic_cast<UnionDdf*>(source.get());
+    UnionDdf* u_dest = dynamic_cast<UnionDdf*>(dest.get());
 
     if( u_source ){
         if( u_dest ){
             // make cross-product
             // TODO do this algorithm nicer?!
-            std::shared_ptr<const Ddf> res = std::make_shared<UnionDdf>();
-            // TODO normal for with i
-            size_t i=0;
-            for( std::shared_ptr<const Ddf> c: u_source->components ){
-                std::shared_ptr<const Ddf> sup = chain(c, dest);
-                res = unite(res, i, sup, 1.0f);
-            }// for
+            unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
+            for( unique_ptr<Ddf>& src: u_source->components ){
+                size_t i;
+                i = 0;
+                for( unique_ptr<Ddf>& dst: u_dest->components){
+
+                    size_t j;
+                    j = 0;
+
+                    unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(src.get(), dst.get());
+                    res->components.push_back(move(sup));
+                    res->weights.push_back(u_source->weights[i]*u_dest->weights[j]);
+
+                    ++j;
+                }// for dst
+                res->owning_pointers.push_back(move(src));
+                ++i;
+            }// for src
+
+            move(u_dest->components.begin(), u_dest->components.end(), res->owning_pointers.end());
+
             return res;
         }
         else{
             // apply b to every a
-            std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
+            std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
             // TODO normal for with i
             size_t i=0;
-            for( std::shared_ptr<const Ddf> c: u_source->components ){
-                std::shared_ptr<SuperpositionDdf> sup = std::make_shared<SuperpositionDdf>(c, dest);
-                res->components.push_back( sup );
+            for( unique_ptr<Ddf>& c: u_source->components ){
+                unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(c.get(), dest.get());
+                res->components.push_back( move(sup) );
                 res->weights.push_back(u_source->weights[i++]);
+                res->owning_pointers.push_back(move(c));
             }// for
             return res;
         }
     }
     else if( u_dest ){
         // apply a to every b
-        std::shared_ptr<UnionDdf> res = std::make_shared<UnionDdf>();
+        std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
         // TODO normal for with i
         size_t i=0;
-        for( std::shared_ptr<const Ddf> c: u_dest->components ){
-            std::shared_ptr<SuperpositionDdf> sup = std::make_shared<SuperpositionDdf>(source, c);
-            res->components.push_back( sup );
+        for( unique_ptr<Ddf>& c: u_dest->components ){
+            unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(source.get(), c.get());
+            res->components.push_back( move(sup) );
             res->weights.push_back(u_dest->weights[i++]);
+            res->owning_pointers.push_back(move(c));
         }// for
         return res;
     }
     else{
-        std::shared_ptr<Ddf> res = std::make_shared<SuperpositionDdf>(source, dest);
+        unique_ptr<Ddf> res = make_unique<SuperpositionDdf<unique_ptr<Ddf>>>(move(source), move(dest));
         return res;
     }
 }
