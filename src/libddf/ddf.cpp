@@ -12,34 +12,51 @@ using namespace glm;
 using namespace std;
 
 size_t Ddf::object_counter = 0;
-std::map<size_t, unique_ptr<boost::pool<>>> Ddf::pools_map;
 
 bool p_hit(float prob){
     return randf() < prob;
 }
 
+class segregated_allocator {
+
+    static std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
+
+public:
+
+    // reserves sizeof(void*) bytes more and stores pointer to pool in that space!
+    static void* malloc(size_t size){
+        size_t adjusted_size = size + sizeof(boost::pool<>*);
+        unique_ptr<boost::pool<>>& ptr = pools_map[size];
+        if(ptr==nullptr){
+            ptr.reset( new boost::pool<>(adjusted_size) );
+            cout << "NEW POOL " << pools_map.size() << " size = " << size << endl;
+            assert(pools_map.size() < 100);
+        }
+        boost::pool<>** memory = (boost::pool<>**)ptr->malloc();
+        memory[0] = ptr.get();
+
+        // TODO Comprehensive logs infrastructure for this!
+        //cout << "ALLOCATE " << &memory[1] << endl;
+
+        return &memory[1];
+    }
+
+    static void free(void* ptr){
+        //cout << "DEALLOCATE " << ptr << endl;
+        boost::pool<>** pool_ptr = (boost::pool<>**) ptr;
+        boost::pool<>** adjusted_ptr = pool_ptr-1;
+        adjusted_ptr[0]->free(adjusted_ptr);
+    }
+};
+std::map<size_t, std::unique_ptr<boost::pool<>>> segregated_allocator::pools_map;
+
 // reserves sizeof(void*) bytes more and stores pointer to pool in that space!
 void* Ddf::operator new(size_t size){
-    size_t adjusted_size = size + sizeof(boost::pool<>*);
-    unique_ptr<boost::pool<>>& ptr = pools_map[size];
-    if(ptr==nullptr){
-        ptr.reset( new boost::pool<>(adjusted_size) );
-        cout << "NEW POOL " << pools_map.size() << " size = " << size << endl;
-    }
-    boost::pool<>** memory = (boost::pool<>**)ptr->malloc();
-    memory[0] = ptr.get();
-
-    // TODO Comprehensive logs infrastructure for this!
-    //cout << "ALLOCATE " << &memory[1] << endl;
-
-    return &memory[1];
+    return segregated_allocator::malloc(size);
 }
 
 void Ddf::operator delete(void* ptr){
-    //cout << "DEALLOCATE " << ptr << endl;
-    boost::pool<>** pool_ptr = (boost::pool<>**) ptr;
-    boost::pool<>** adjusted_ptr = pool_ptr-1;
-    adjusted_ptr[0]->free(adjusted_ptr);
+    segregated_allocator::free(ptr);
 }
 
 SphericalDdf::SphericalDdf(){
@@ -99,6 +116,18 @@ float CosineDdf::value( vec3 arg ) const {
 
 namespace detail {
 
+template<class T>
+class segregated_allocator_class {
+public:
+    using value_type = T;
+    T* allocate(size_t count){
+        return (T*)segregated_allocator::malloc(count*sizeof(T));
+    }
+    void deallocate(T* ptr, size_t){
+        segregated_allocator::free(ptr);
+    }
+};
+
 template<class P=Ddf*>
 class SuperpositionDdf: public Ddf {
 
@@ -119,9 +148,9 @@ public:
 
 // TODO Indicate somehow that trySample should always succeed!
 struct UnionDdf: public Ddf {
-    vector< unique_ptr<Ddf> > components;
-    vector< float > weights;
-    vector< unique_ptr<Ddf> > owning_pointers;
+    vector< unique_ptr<Ddf>, segregated_allocator_class<unique_ptr<Ddf>> > components;
+    vector< float, segregated_allocator_class<float> > weights;
+    vector< unique_ptr<Ddf>, segregated_allocator_class<unique_ptr<Ddf>> > owning_pointers;
     UnionDdf(){
     }
     // weight eqals to sum of weights

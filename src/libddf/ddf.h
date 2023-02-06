@@ -46,9 +46,6 @@ struct Ddf {
 
     void* operator new(size_t size);
     void operator delete(void* ptr);
-
-private:
-    static std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
 };
 
 extern std::unique_ptr<Ddf> unite(std::unique_ptr<Ddf> a = nullptr, float ka=1.0f, std::unique_ptr<Ddf> b = nullptr, float kb=1.0f);
