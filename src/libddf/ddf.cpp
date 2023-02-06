@@ -2,6 +2,8 @@
 
 #include "randf.h"
 
+#include <boost/pool/pool.hpp>
+
 #include <functional>
 #include <cassert>
 #include <algorithm>
@@ -10,9 +12,29 @@ using namespace glm;
 using namespace std;
 
 size_t Ddf::object_counter = 0;
+std::map<size_t, unique_ptr<boost::pool<>>> Ddf::pools_map;
 
 bool p_hit(float prob){
     return randf() < prob;
+}
+
+void* Ddf::operator new(size_t size){
+    unique_ptr<boost::pool<>>& ptr = pools_map[size];
+    if(ptr==nullptr){
+        ptr.reset( new boost::pool<>(size) );
+        cout << "NEW POOL " << pools_map.size() << " size = " << size << endl;
+    }
+    void* memory = ptr->malloc();
+    return memory;
+}
+
+void Ddf::operator delete(void* ptr){
+    // TODO temporary solution: find pool
+    for(auto& el: pools_map){
+        if(el.second->is_from(ptr)){
+            el.second->free(ptr);
+        }// if
+    }// for
 }
 
 SphericalDdf::SphericalDdf(){

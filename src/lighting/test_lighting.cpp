@@ -9,7 +9,7 @@ using namespace std;
 
 const size_t n_samples = 100000;
 
-float uniform_sampling(vec3 origin, shared_ptr<Ddf> sdf, const Light& light){
+float uniform_sampling(vec3 origin, Ddf* sdf, const Light& light){
 
     float sum = 0.0f;
     for(size_t i = 0; i < n_samples; ++i){
@@ -24,7 +24,7 @@ float uniform_sampling(vec3 origin, shared_ptr<Ddf> sdf, const Light& light){
     return sum/n_samples;
 }
 
-float directed_sampling(vec3 origin, shared_ptr<Ddf> sdf, const Light& light){
+float directed_sampling(vec3 origin, Ddf* sdf, const Light& light){
 
     shared_ptr<Ddf> light_ddf = light.lightToPoint(origin);
     //shared_ptr<Ddf> chain_ddf = chain(light_ddf, sdf);
@@ -50,23 +50,23 @@ void test_all_lights(vec3 origin, vec3 direction, S f){
     shared_ptr<const Light> area_light = make_shared<AreaLight>(vec3(-0.5f,-0.5f,0), vec3(1,0,0), vec3(0,1,0), 1.0f);
     shared_ptr<const Light> sphere_light = make_shared<SphereLight>(vec3(), 0.5f);
 
-    shared_ptr<Ddf> sdf = make_shared<RotateDdf>(make_shared<SDF>(), direction);
+    unique_ptr<Ddf> sdf = make_unique<RotateDdf>(unique_ptr<SDF>(), direction);
 
-    float v1 = f(origin, sdf, *area_light);
+    float v1 = f(origin, sdf.get(), *area_light);
     origin *= 2;
-    float v2 = f(origin, sdf, *area_light);
+    float v2 = f(origin, sdf.get(), *area_light);
 
     cout << v1 << " / " << v2 << " = " << v1/v2 << endl;
 
     origin /= 2;
-    float v3 = f(origin, sdf, *sphere_light);
+    float v3 = f(origin, sdf.get(), *sphere_light);
 
 //    cout << v1 << " / " << v3 << " = " << v1/v3 << endl;
 
     cout << v2 << " / " << v3 << " = " << v2/v3 << endl;
 
     origin *= 2;
-    float v4 = f(origin, sdf, *sphere_light);
+    float v4 = f(origin, sdf.get(), *sphere_light);
 
     cout << v3 << " / " << v4 << " = " << v3/v4 << endl;
 }

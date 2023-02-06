@@ -3,8 +3,11 @@
 
 #include <glm/vec3.hpp>
 
+#include <boost/pool/poolfwd.hpp>
+
 #include <memory>
 #include <iostream>
+#include <map>
 
 struct Ddf {
 
@@ -40,6 +43,12 @@ struct Ddf {
         --object_counter;
         //std::cout << "COUNT " << object_counter << std::endl;
     }
+
+    void* operator new(size_t size);
+    void operator delete(void* ptr);
+
+private:
+    static std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
 };
 
 extern std::unique_ptr<Ddf> unite(std::unique_ptr<Ddf> a = nullptr, float ka=1.0f, std::unique_ptr<Ddf> b = nullptr, float kb=1.0f);

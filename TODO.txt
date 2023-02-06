@@ -6,6 +6,7 @@ C++ linting:
  - override
  - find duplication like in polar2vec() and check_ddf.cpp!
  - local variable in loop should be re-initialized every time!
+ - virtual destructor where it's needed!
 
 algorithm improvements:
  - sample union distributins not randomly, but round-robin?

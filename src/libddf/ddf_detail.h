@@ -13,10 +13,11 @@ namespace detail {
 
 // TODO hide t from interface?
 struct TransformDdf: public Ddf {
-    std::shared_ptr<Ddf> origin;
+    std::unique_ptr<Ddf> origin;
     glm::mat3 transformation;
-    TransformDdf(std::shared_ptr<Ddf> origin, glm::mat3 transformation){
-        this->origin = std::dynamic_pointer_cast<Ddf>(origin);
+    TransformDdf(std::unique_ptr<Ddf> _origin, glm::mat3 _transformation)
+        :origin(std::move(_origin))
+    {
         assert(this->origin);
         this->transformation = transformation;
         // XXX best-guess
@@ -70,8 +71,8 @@ public:
 
 // TODO bad idea to inherit implementation!
 struct RotateDdf: public detail::TransformDdf {
-    RotateDdf(std::shared_ptr<Ddf> origin, glm::vec3 to)
-        :TransformDdf(origin, glm::mat3()){
+    RotateDdf(std::unique_ptr<Ddf> origin, glm::vec3 to)
+        :TransformDdf(move(origin), glm::mat3()){
         glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis = cross(z, to);
         // HACK corner case to=z
