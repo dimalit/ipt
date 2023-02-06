@@ -18,23 +18,28 @@ bool p_hit(float prob){
     return randf() < prob;
 }
 
+// reserves sizeof(void*) bytes more and stores pointer to pool in that space!
 void* Ddf::operator new(size_t size){
+    size_t adjusted_size = size + sizeof(boost::pool<>*);
     unique_ptr<boost::pool<>>& ptr = pools_map[size];
     if(ptr==nullptr){
-        ptr.reset( new boost::pool<>(size) );
+        ptr.reset( new boost::pool<>(adjusted_size) );
         cout << "NEW POOL " << pools_map.size() << " size = " << size << endl;
     }
-    void* memory = ptr->malloc();
-    return memory;
+    boost::pool<>** memory = (boost::pool<>**)ptr->malloc();
+    memory[0] = ptr.get();
+
+    // TODO Comprehensive logs infrastructure for this!
+    //cout << "ALLOCATE " << &memory[1] << endl;
+
+    return &memory[1];
 }
 
 void Ddf::operator delete(void* ptr){
-    // TODO temporary solution: find pool
-    for(auto& el: pools_map){
-        if(el.second->is_from(ptr)){
-            el.second->free(ptr);
-        }// if
-    }// for
+    //cout << "DEALLOCATE " << ptr << endl;
+    boost::pool<>** pool_ptr = (boost::pool<>**) ptr;
+    boost::pool<>** adjusted_ptr = pool_ptr-1;
+    adjusted_ptr[0]->free(adjusted_ptr);
 }
 
 SphericalDdf::SphericalDdf(){
