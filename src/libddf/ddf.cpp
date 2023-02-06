@@ -78,10 +78,11 @@ CosineDdf::CosineDdf(){
 vec3 CosineDdf::trySample() const {
     float u1 = randf();
     float u2 = randf();
-    float alpha = acos(sqrt(u1));
+    float cos_alpha = sqrt(u1);
+    float alpha = acos(cos_alpha);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), cos(alpha));
+    return vec3(r*cos(phi), r*sin(phi), cos_alpha);
 }
 float CosineDdf::value( vec3 arg ) const {
     // TODO assert length = 1?

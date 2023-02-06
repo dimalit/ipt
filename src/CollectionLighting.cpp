@@ -12,7 +12,7 @@ using namespace std;
 unique_ptr<Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) const {
     std::unique_ptr<Ddf> res = unite();
     float acc_power = 0.0f;
-    for(shared_ptr<const Light> l: lights){
+    for(const shared_ptr<const Light>& l: lights){
         unique_ptr<Ddf> light_ddf = l->lightToPoint(pos);
 //        vec3 nearest_point = l->nearestPointTo(pos);
 //        float light_ddf_min = light_ddf->value(normalize(nearest_point-pos));
@@ -28,7 +28,7 @@ unique_ptr<Ddf> CollectionLighting::distributionInPoint(glm::vec3 pos) const {
 
 optional<light_intersection> CollectionLighting::traceRayToLight(glm::vec3 origin, glm::vec3 direction) const {
     optional<light_intersection> res;
-    for(shared_ptr<const Light> l: lights){
+    for(const shared_ptr<const Light>& l: lights){
         optional<light_intersection> e = l->traceRay(origin, direction);
         if(!e.has_value())
             continue;

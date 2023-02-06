@@ -15,6 +15,7 @@ algorithm improvements:
 
 other:
  - remove dynamic_cast's to Ddf
+ - find tool to optimize mathematical formulas (sin, sqrt etc)
 
 queue:
  - decide with full_theoretical_weights and try-Sample

@@ -53,10 +53,10 @@ public:
 
 // filters samples by it's own PDF - resulting in a flat PDF
 class LightToChainedDistribution: public Ddf {
-    shared_ptr<const LightToDistribution> backend_disribution;
+    unique_ptr<const LightToDistribution> backend_disribution;
 public:
     LightToChainedDistribution(const Light* light, glm::vec3 origin)
-        :backend_disribution(make_shared<LightToDistribution>(light, origin)){
+        :backend_disribution(make_unique<LightToDistribution>(light, origin)){
             vec3 nearest_point = light->nearestPointTo(origin);
             this->max_value = nearest_point == vec3() ? 0.0f : backend_disribution->value(normalize(nearest_point-origin));
     }

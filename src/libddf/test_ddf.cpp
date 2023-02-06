@@ -137,7 +137,7 @@ void test_union(){
 
     right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
     left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
-    shared_ptr<Ddf> unequal  = unite(move(left), 1.0f, move(right), 2.5f);
+    unique_ptr<Ddf> unequal  = unite(move(left), 1.0f, move(right), 2.5f);
 
     cout << "Union left 1 + right 2.5:" << endl;
     cout << (check_ddf(*unequal, true, 40, 40) ? "OK" : "FAIL") << endl;

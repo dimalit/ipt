@@ -85,9 +85,9 @@ struct RotateDdf: public detail::TransformDdf {
 
 // TODO Probably this should exist as already chain of 2
 struct InvertDdf: public Ddf {
-    std::shared_ptr<Ddf> origin;
-    InvertDdf(std::shared_ptr<Ddf> origin, float min_value){
-        this->origin = std::dynamic_pointer_cast<Ddf>(origin);
+    std::unique_ptr<Ddf> origin;
+    InvertDdf(std::unique_ptr<Ddf> _origin, float min_value)
+        :origin(std::move(_origin)){
         assert(this->origin);
         this->max_value = 1.0f/min_value;
     }
