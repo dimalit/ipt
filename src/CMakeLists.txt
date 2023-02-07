@@ -1,6 +1,7 @@
 add_subdirectory(libddf)
 add_subdirectory(lighting)
 add_subdirectory(geometry)
+add_subdirectory(libcatch2)
 
 file( GLOB sources "*.cpp" "*.h")
 add_library(ipt_lib STATIC ${sources})

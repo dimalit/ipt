@@ -2,6 +2,12 @@
 
 #include "ddf_detail.h"
 
+#include <catch_amalgamated.hpp>
+
+TEST_CASE("sample test case", "[sample]"){
+    REQUIRE( 1 == 1);
+}
+
 #include <iostream>
 #include <vector>
 
@@ -156,7 +162,7 @@ void test_union(){
     cout << endl;
 }
 
-int main(){
+int old_main(){
     test_ddf_basic();
     test_sampling_ddfs();
     test_superposition();
