@@ -4,10 +4,6 @@
 
 #include <catch_amalgamated.hpp>
 
-TEST_CASE("sample test case", "[sample]"){
-    REQUIRE( 1 == 1);
-}
-
 #include <iostream>
 #include <vector>
 
@@ -20,47 +16,39 @@ bool eq(float a, float b){
     return abs(a-b) < EPS;
 }
 
-void test_ddf_basic(){
+TEST_CASE("basic checks for DDFs"){
     SphericalDdf sd;
-    assert(eq(sd.max_value, 0.25f/M_PI));
-    assert(!sd.isSingular());
-    assert(eq(sd.value(normalize(vec3(1,1,1))),0.25f/M_PI));
-    assert(eq(sd.value(normalize(vec3(1,1,-1))), 0.25f/M_PI));
+    REQUIRE(eq(sd.max_value, 0.25f/M_PI));
+    REQUIRE(!sd.isSingular());
+    REQUIRE(eq(sd.value(normalize(vec3(1,1,1))),0.25f/M_PI));
+    REQUIRE(eq(sd.value(normalize(vec3(1,1,-1))), 0.25f/M_PI));
 
     UpperHalfDdf ud;
-    assert(eq(ud.max_value,0.5f/M_PI));
-    assert(!ud.isSingular());
+    REQUIRE(eq(ud.max_value,0.5f/M_PI));
+    REQUIRE(!ud.isSingular());
 
-    assert(eq(ud.value(vec3(0,0,1)),0.5f/M_PI));
-    assert(eq(ud.value(normalize(vec3(1,1,1))),0.5f/M_PI));
-    assert(ud.value(normalize(vec3(1,1,-1)))==0.0f);
+    REQUIRE(eq(ud.value(vec3(0,0,1)),0.5f/M_PI));
+    REQUIRE(eq(ud.value(normalize(vec3(1,1,1))),0.5f/M_PI));
+    REQUIRE(ud.value(normalize(vec3(1,1,-1)))==0.0f);
 
     CosineDdf cd;
-    assert(eq(cd.max_value, 1.0f/M_PI));
-    assert(!cd.isSingular());
+    REQUIRE(eq(cd.max_value, 1.0f/M_PI));
+    REQUIRE(!cd.isSingular());
 
-    assert(eq(cd.value(vec3(0,0,1)),M_1_PI));
-    assert(eq(cd.value(vec3(1,0,EPS/10.0f)),0.0f));
-    assert(cd.value(normalize(vec3(1,1,-1)))==0.0f);
+    REQUIRE(eq(cd.value(vec3(0,0,1)),M_1_PI));
+    REQUIRE(eq(cd.value(vec3(1,0,EPS/10.0f)),0.0f));
+    REQUIRE(cd.value(normalize(vec3(1,1,-1)))==0.0f);
 
     MirrorDdf md;
-    assert(isinf(md.max_value));
-    assert(md.isSingular());
+    REQUIRE(isinf(md.max_value));
+    REQUIRE(md.isSingular());
 }
 
-void test_sampling_ddfs(){
+TEST_CASE("Chi^2 for DDFs"){
 
-    cout << "SphericalDdf:" << endl;
-    cout << (check_ddf(SphericalDdf()) ? "OK" : "FAIL") << endl;
-    cout << endl;
-
-    cout << "UpperHalfDdf:" << endl;
-    cout << (check_ddf(UpperHalfDdf()) ? "OK" : "FAIL") << endl;
-    cout << endl;
-
-    cout << "CosineDdf:" << endl;
-    cout << (check_ddf(CosineDdf()) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(SphericalDdf()));
+    CHECK(check_ddf(UpperHalfDdf()));
+    CHECK(check_ddf(CosineDdf()));
 
 //    GeometrySphereInBox geo;
 
@@ -83,26 +71,20 @@ void test_sampling_ddfs(){
 //    cout << endl;
 }
 
-void test_superposition(){
+TEST_CASE("Chi^2 for superpositions"){
 
     unique_ptr<Ddf> sup_self = chain(make_unique<UpperHalfDdf>(), make_unique<UpperHalfDdf>());
 
-    cout << "UpperHalfDdf * 2:" << endl;
-    cout << (check_ddf(*sup_self) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(*sup_self));
 
     unique_ptr<Ddf> right_half = make_unique<RotateDdf>(make_unique<UpperHalfDdf>(), vec3(1,0,0));
     unique_ptr<Ddf> cosine = make_unique<CosineDdf>();
     unique_ptr<Ddf> half_cosine = chain(move(right_half), move(cosine));
 
-    cout << "Right half-cosine:" << endl;
-    cout << (check_ddf(*half_cosine, false) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(*half_cosine, false));
 
     unique_ptr<Ddf> square = make_unique<SquareDdfForTest>(1.0f);
-    cout << "Plain 1x1 square:" << endl;
-    cout << (check_ddf(*square, true, 40, 20) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(*square, true, 40, 20));
 
     square = make_unique<SquareDdfForTest>(1.0f);
     cosine = make_unique<CosineDdf>();
@@ -111,13 +93,8 @@ void test_superposition(){
     cosine = make_unique<CosineDdf>();
     unique_ptr<Ddf> tilted_square_over_cosine = chain(make_unique<RotateDdf>(move(square), normalize(vec3(1,1,1))), move(cosine));
 
-    cout << "Square over cosine:" << endl;
-    cout << (check_ddf(*square_over_cosine, false, 40, 20) ? "OK" : "FAIL") << endl;
-    cout << endl;
-
-    cout << "Tilted square over cosine:" << endl;
-    cout << (check_ddf(*tilted_square_over_cosine, false, 80, 40) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(*square_over_cosine, false, 40, 20));
+    CHECK(check_ddf(*tilted_square_over_cosine, false, 80, 40));
 
     // Very important case: square over inverse itself!
     // TODO do same copy trick in other tests
@@ -126,12 +103,10 @@ void test_superposition(){
     unique_ptr<Ddf> inverse = make_unique<InvertDdf>(make_unique<SquareDdfForTest>(big_square), min_value);
     unique_ptr<Ddf> square_over_inverse = chain(make_unique<SquareDdfForTest>(big_square), move(inverse));
 
-    cout << "Big square over inverse itself:" << endl;
-    cout << (check_ddf(*square_over_inverse, false) ? "OK" : "FAIL") << endl;
-    cout << endl;
+    CHECK(check_ddf(*square_over_inverse, false));
 }
 
-void test_union(){
+TEST_CASE("Chi^2 for union"){
     unique_ptr<Ddf> right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
     unique_ptr<Ddf> left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
 
@@ -162,11 +137,3 @@ void test_union(){
     cout << endl;
 }
 
-int old_main(){
-    test_ddf_basic();
-    test_sampling_ddfs();
-    test_superposition();
-
-    test_union();
-    return 0;
-}

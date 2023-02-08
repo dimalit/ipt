@@ -184,19 +184,19 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
         }// for j
     }// for i
 
-    cout << "DDF integral = " << ddf_integral << endl;
-    cout << "DDF max      = " << ddf_max << " / " << ddf.max_value << endl;
+    cout << "\tDDF integral = " << ddf_integral << endl;
+    cout << "\tDDF max      = " << ddf_max << " / " << ddf.max_value << endl;
 
-    cout << "Experimental Total = " << exp_counter << endl;
-    cout << "Theoretical total  = " << theor_counter << endl;
+    cout << "\tExperimental Total = " << exp_counter << endl;
+    cout << "\tTheoretical total  = " << theor_counter << endl;
     float success_ratio = (float)N/total_tries;
-    cout << "Sample success ratio = " << success_ratio << endl;
+    cout << "\tSample success ratio = " << success_ratio << endl;
 
     size_t total_buckets = size_alpha * size_phi;
     float chi_floor = 70, chi_ceil = 135;       // for 100
     chi_floor *= (total_buckets-dof_skip_counter) / 100.0f;
     chi_ceil *= (total_buckets-dof_skip_counter) / 100.0f;
-    cout << "Chi^2 " << total_buckets-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
+    cout << "\tChi^2 " << total_buckets-dof_skip_counter << " DoF (" << chi_floor << "-" << chi_ceil << ") = " << chi2 << endl;
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
            success_ratio/ddf_integral > 0.95f && success_ratio/ddf_integral < 1.05f &&
