@@ -1,6 +1,8 @@
 #ifndef DDF_H
 #define DDF_H
 
+#include "randf.h"
+
 #include <glm/vec3.hpp>
 
 #include <boost/pool/poolfwd.hpp>
@@ -13,7 +15,9 @@ struct Ddf {
 
     // may return 0 if sampling failed
     // this is used to implicitly lower distribution's weight
-    virtual glm::vec3 trySample() const = 0;
+    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const = 0;
+
+    void seed();
 
     // will return NaN if singular
     virtual float value( glm::vec3 arg ) const = 0;

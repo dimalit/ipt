@@ -23,10 +23,12 @@
 using namespace glm;
 using namespace std;
 
+std::mt19937 gen_for_depth_0;
+
 // TODO light_hint is not very good solution!
 float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
 
-    if(depth==6)
+    if(depth==3)
         return 0.0f;
 
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
@@ -59,7 +61,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     float res = 0.0f;
 
     for(size_t i=0; i<10; ++i){
-        new_direction = mix_ddf->trySample();
+        new_direction = mix_ddf->trySample(depth==0 ? gen_for_depth_0 : gen);
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!
@@ -91,6 +93,7 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
         // ray bouncing recursion
         // with hard-limited depth
+        gen_for_depth_0.seed();
         float value = ray_power(*scene.geometry, *scene.lighting, origin, direction);
         // TODO investigate why it can be -1e-3
         assert(value > -1e-3);
@@ -117,7 +120,7 @@ Scene make_scene_box(){
     // radiates down
     lighting->addAreaLight(vec3{+0.1f, -0.8f-0.1f, -0.15f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
     // radiates forward
-    lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.7f-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
+    //lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.7f-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
     //lighting->addOuterLight(10);
 
@@ -145,11 +148,11 @@ Scene make_scene_fractal(){
 
 int main(){
 
-    Scene scene = make_scene_fractal();
+    Scene scene = make_scene_box();
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 100);
+    render(scene, r_plane, 10);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
@@ -161,7 +164,7 @@ int main(){
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
-    float gamma = 0.1f;
+    float gamma = 0.6f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
             float value = r_plane.pixels[y*r_plane.width+x]/r_plane.max_value;

@@ -3,16 +3,16 @@
 
 #include <random>
 
-static struct {
-    std::random_device rdev;
-    std::mt19937 gen = std::mt19937(rdev());
+static std::random_device rdev;
+static std::mt19937 gen = std::mt19937(rdev());
 
+static struct {
     std::uniform_real_distribution<> dist = std::uniform_real_distribution<>(0.0f, 1.0f);
 
-    float operator()() {
-        float res = dist(gen);
+    float operator()(std::mt19937& _gen = gen) {
+        float res = dist(_gen);
         while(res==1.0f)
-            res = dist(gen);
+            res = dist(_gen);
         return res;
     }
 } randf;
