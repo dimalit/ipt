@@ -54,14 +54,15 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     // TODO better solution?
     Ddf* sdf_tmp = si->sdf.get();
 
-    unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
-    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
+    //unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
+    //unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
+    auto& mix_ddf = si->sdf;
 
     vec3 new_direction;
     float res = 0.0f;
 
     for(size_t i=0; i<10; ++i){
-        new_direction = mix_ddf->trySample(depth==0 ? gen_for_depth_0 : gen);
+        new_direction = mix_ddf->trySample(gen_for_depth_0);
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!
@@ -73,12 +74,15 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
 }
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
-    for(size_t sample=0; sample<n_samples; ++sample){
 
 //        float x = randf();
 //        float y = randf();
-        for(size_t iy = 0; iy < 640; iy++){
-        for(size_t ix = 0; ix < 640; ix++){
+for(size_t iy = 0; iy < 640; iy++){
+for(size_t ix = 0; ix < 640; ix++){
+
+    gen_for_depth_0.seed();
+
+    for(size_t sample=0; sample<n_samples; ++sample){
 
         float x = (ix+randf())/640.0f;
         float y = (iy+randf())/640.0f;
@@ -93,7 +97,6 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 
         // ray bouncing recursion
         // with hard-limited depth
-        gen_for_depth_0.seed();
         float value = ray_power(*scene.geometry, *scene.lighting, origin, direction);
         // TODO investigate why it can be -1e-3
         assert(value > -1e-3);
@@ -101,14 +104,12 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
         assert(isfinite(value));
         r_plane.addRay(x, y, value);
 
-        }// for x
-        //cout << iy << endl;
-        }// for y
-
-        cout << "Sample " << sample << " / " << n_samples << " OK" << endl;
-
     }// for sample
-}
+
+}// for x
+cout << iy << endl;
+}// for y
+}//render()
 
 Scene make_scene_box(){
 
