@@ -15,11 +15,13 @@ namespace detail {
 struct TransformDdf: public Ddf {
     std::unique_ptr<Ddf> origin;
     glm::mat3 transformation;
+    glm::mat3 inverse;
     TransformDdf(std::unique_ptr<Ddf> _origin, glm::mat3 _transformation)
         :origin(std::move(_origin))
     {
         assert(this->origin);
         this->transformation = transformation;
+        this->inverse = glm::inverse(transformation);
         // XXX best-guess
         this->max_value = dynamic_cast<Ddf*>(origin.get())->max_value;
     }
@@ -29,7 +31,7 @@ struct TransformDdf: public Ddf {
     }
 
     virtual float value( glm::vec3 arg ) const override {
-        return origin->value(inverse(transformation)*arg);
+        return origin->value(inverse*arg);
     }
 
     // TODO Need separate implementations for Continuous and Singular
