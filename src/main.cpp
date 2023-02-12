@@ -23,12 +23,13 @@
 using namespace glm;
 using namespace std;
 
-std::mt19937 gen_for_depth_0;
+size_t n_rays = 5;
+size_t depth_max = 3;
 
 // TODO light_hint is not very good solution!
 float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
 
-    if(depth==3)
+    if(depth==depth_max)
         return 0.0f;
 
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
@@ -60,7 +61,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     vec3 new_direction;
     float res = 0.0f;
 
-    for(size_t i=0; i<10; ++i){
+    for(size_t i=0; i<n_rays; ++i){
         new_direction = mix_ddf->trySample();
         // possible dimming because of this
         if(new_direction != vec3()){
@@ -69,7 +70,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
             res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
         }
     }
-    return isfinite(res)?res/10 :0.0f;
+    return isfinite(res) ? res/n_rays : 0.0f;
 }
 
 void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
@@ -78,8 +79,6 @@ void render(const Scene& scene, RenderPlane& r_plane, size_t n_samples){
 //        float y = randf();
 for(size_t iy = 0; iy < 640; iy++){
 for(size_t ix = 0; ix < 640; ix++){
-
-    gen_for_depth_0.seed();
 
     for(size_t sample=0; sample<n_samples; ++sample){
 
@@ -146,31 +145,48 @@ Scene make_scene_fractal(){
     return Scene{geometry, lighting, camera};
 }
 
-int main(){
+int n_val(float val, float max, float contrast, float gamma){
+    float adj = val*contrast/max;
+    adj = std::min(adj, contrast);
+    adj = std::max(adj, 1.0f);
+    float fn = log(adj)/log(contrast);
+    fn = pow(fn, gamma);
+    int n = 256*fn;
+    n = std::max(0, n);
+    n = std::min(255, n);
+    return n;
+}
+
+int main(int argc, char** argv){
+
+    if(argc>1)
+        n_rays = atoi(argv[1]);
+
+    if(argc>2)
+        depth_max = atoi(argv[2]);
+
+    cout << "Rendering with " << n_rays << " rays per pixel and max depth " << depth_max << endl;
 
     Scene scene = make_scene_box();
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, 10);
+    render(scene, r_plane, n_rays);
 
     cout << "Max value = " << r_plane.max_value << endl;
 
     //r_plane.smooth(2);
-    r_plane.computeSmoothedMax(5);
-
+    //r_plane.computeSmoothedMax(5);
     cout << "Smoothed max = " << r_plane.max_value << endl;
 
     FILE* fp = fopen("result.pgm", "wb");
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
-    float gamma = 0.6f;
+    float contrast = 500;
+    float gamma = 1.0f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
-            float value = r_plane.pixels[y*r_plane.width+x]/r_plane.max_value;
-            if(value>1.0f)
-                value = 1.0f;
-            int ivalue = pow(value, gamma)*255;
+            int ivalue = n_val(r_plane.pixels[y*r_plane.width+x], r_plane.max_value, contrast, gamma);
             fprintf(fp, "%d ", ivalue);
         }
         fprintf(fp, "\n");

@@ -25,8 +25,8 @@ struct TransformDdf: public Ddf {
         // XXX best-guess
         this->max_value = dynamic_cast<Ddf*>(origin.get())->max_value;
     }
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override {
-        glm::vec3 x = origin->trySample(_gen);
+    virtual glm::vec3 trySample() const override {
+        glm::vec3 x = origin->trySample();
         return transformation * x;
     }
 
@@ -41,20 +41,20 @@ struct TransformDdf: public Ddf {
 
 struct SphericalDdf: public Ddf {
     SphericalDdf();
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
 struct UpperHalfDdf: public Ddf {
     UpperHalfDdf();
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
 class CosineDdf: public Ddf {
 public:
     CosineDdf();
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 arg ) const override;
 };
 
@@ -63,7 +63,7 @@ public:
     MirrorDdf(){
         max_value = std::numeric_limits<float>::infinity();
     }
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override {
+    virtual glm::vec3 trySample() const override {
         return glm::vec3(0.0f, 0.0f, 1.0f);
     }
     virtual float value( glm::vec3 arg ) const override {
@@ -95,7 +95,7 @@ struct InvertDdf: public Ddf {
         assert(this->origin);
         this->max_value = 1.0f/min_value;
     }
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override {
+    virtual glm::vec3 trySample() const override {
         // TODO Do it better?
         assert(false && "not implemented");
         return glm::vec3();

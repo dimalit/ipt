@@ -47,7 +47,7 @@ public:
             this->max_value = std::numeric_limits<float>::infinity();
         }
     }
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
 };
 
@@ -60,11 +60,11 @@ public:
             vec3 nearest_point = light->nearestPointTo(origin);
             this->max_value = nearest_point == vec3() ? 0.0f : backend_disribution->value(normalize(nearest_point-origin));
     }
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( glm::vec3 direction ) const override;
 };
 
-glm::vec3 LightToDistribution::trySample(std::mt19937& _gen) const {
+glm::vec3 LightToDistribution::trySample() const {
     vec3 dir;
     light_intersection inter = light->sample();
     dir = normalize(inter.position-origin);
@@ -95,8 +95,8 @@ static bool p_hit(float prob){
     return randf() < prob;
 }
 
-glm::vec3 LightToChainedDistribution::trySample(std::mt19937& _gen) const {
-    vec3 x = backend_disribution->trySample(_gen);
+glm::vec3 LightToChainedDistribution::trySample() const {
+    vec3 x = backend_disribution->trySample();
     if(x == vec3())         // fail if fail
         return x;
 

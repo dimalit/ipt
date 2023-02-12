@@ -61,9 +61,9 @@ void Ddf::operator delete(void* ptr){
 SphericalDdf::SphericalDdf(){
     max_value = 0.25/M_PI;
 }
-vec3 SphericalDdf::trySample(std::mt19937& _gen) const {
-    float u1 = randf(_gen)*2.0f - 1.0f;
-    float u2 = randf(_gen);
+vec3 SphericalDdf::trySample() const {
+    float u1 = randf()*2.0f - 1.0f;
+    float u2 = randf();
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
@@ -77,9 +77,9 @@ float SphericalDdf::value( vec3 ) const {
 UpperHalfDdf::UpperHalfDdf(){
     max_value = 0.5f/M_PI;
 }
-vec3 UpperHalfDdf::trySample(std::mt19937& _gen) const {
-    float u1 = randf(_gen);
-    float u2 = randf(_gen);
+vec3 UpperHalfDdf::trySample() const {
+    float u1 = randf();
+    float u2 = randf();
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
@@ -96,9 +96,9 @@ float UpperHalfDdf::value( vec3 arg ) const {
 CosineDdf::CosineDdf(){
     max_value = 1.0f/M_PI;
 }
-vec3 CosineDdf::trySample(std::mt19937& _gen) const {
-    float u1 = randf(_gen);
-    float u2 = randf(_gen);
+vec3 CosineDdf::trySample() const {
+    float u1 = randf();
+    float u2 = randf();
     float cos_alpha = sqrt(u1);
     float alpha = acos(cos_alpha);
     float phi = 2*M_PI*u2;
@@ -142,7 +142,7 @@ public:
         return source->value(x) * dest->value(x) / dest->max_value;
     }
 
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
 };
 
 // TODO Indicate somehow that trySample should always succeed!
@@ -153,7 +153,7 @@ struct UnionDdf: public Ddf {
     UnionDdf(){
     }
     // weight eqals to sum of weights
-    virtual glm::vec3 trySample(std::mt19937& _gen = gen) const override;
+    virtual glm::vec3 trySample() const override;
     virtual float value( vec3 arg ) const override;
 };
 
@@ -176,9 +176,9 @@ SuperpositionDdf<P>::SuperpositionDdf(P _source, P _dest)
 }
 
 template<class P>
-vec3 SuperpositionDdf<P>::trySample(std::mt19937& _gen) const {
+vec3 SuperpositionDdf<P>::trySample() const {
 
-    vec3 x = source->trySample(_gen);
+    vec3 x = source->trySample();
     if(x == vec3())         // fail if fail
         return x;
 
@@ -190,17 +190,17 @@ vec3 SuperpositionDdf<P>::trySample(std::mt19937& _gen) const {
 // As from different points Union distribution looks differently -
 // it would fail with different rate for different points,
 // thus modeling difference in lighting
-vec3 UnionDdf::trySample(std::mt19937& _gen) const {
+vec3 UnionDdf::trySample() const {
     vec3 res;
     if(components.size() == 0)
         return vec3();
-    float r = randf(_gen);
+    float r = randf();
     float acc = 0.0f;
     // TODO What's best used here as i?
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
-            res = components[i]->trySample(_gen);
+            res = components[i]->trySample();
             break;
         }
     }// for
