@@ -81,7 +81,9 @@ struct RotateDdf: public detail::TransformDdf {
         if(length(axis)<1e-6)
             axis = glm::vec3(1.0f, 0.0f, 0.0f);
         float cosinus = dot(z,to);
+        // TODO make this field private!
         transformation = rotate(glm::identity<glm::mat4>(), (float)acos(cosinus), axis);
+        inverse = glm::inverse(transformation);
     }
 };
 
