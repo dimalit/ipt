@@ -54,15 +54,14 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     // TODO better solution?
     Ddf* sdf_tmp = si->sdf.get();
 
-    //unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
-    //unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
-    auto& mix_ddf = si->sdf;
+    unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
+    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
 
     vec3 new_direction;
     float res = 0.0f;
 
     for(size_t i=0; i<10; ++i){
-        new_direction = mix_ddf->trySample(gen_for_depth_0);
+        new_direction = mix_ddf->trySample();
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!
