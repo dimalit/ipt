@@ -2,6 +2,8 @@
 
 #include <check_ddf.h>
 
+#include <catch_amalgamated.hpp>
+
 #include <iostream>
 
 using namespace glm;
@@ -98,7 +100,7 @@ void test_light_ddfs(vec3 origin){
 //    cout << endl;
 }
 
-int main(){
+int old_main(){
 
 //    cout << "Up:" << endl;
 //    test_light_ddfs(vec3(0,0,0.6f));
@@ -122,3 +124,22 @@ int main(){
 
     return 0;
 }
+
+using namespace Catch::Matchers;
+
+TEST_CASE("AreaLight basic tests"){ 
+    AreaLight diag(vec3(1,1,1), vec3(-1,-1,-1), vec3(0,-1,0), 4);
+
+    const float eps = 1e-6;
+    float sin_alpha = sqrt(2.0f/3.0f);
+    float diag_length = length(vec3(1,1,1));
+    REQUIRE_THAT(diag.area, WithinAbs(diag_length*sin_alpha, eps));
+
+    vec3 origin = vec3(0,0,0.1f);
+    vec3 diamond_hit_dir = vec3(1.1f, 0, 0);
+
+    optional<light_intersection> inter = diag.traceRay(origin, diamond_hit_dir);
+    REQUIRE(inter.has_value());
+    REQUIRE_THAT(inter->surface_power, WithinAbs(4.0f/diag.area, eps));
+}
+

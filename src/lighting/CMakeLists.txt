@@ -9,6 +9,7 @@ add_executable(test_lighting test_lighting.cpp)
 target_link_libraries(test_lighting PRIVATE lighting)
 target_link_libraries(test_lighting PRIVATE ddf_testlib)
 enable_testing()
+target_link_libraries(test_lighting PRIVATE catch2)
 add_test(test_lighting test_lighting)
 
 
