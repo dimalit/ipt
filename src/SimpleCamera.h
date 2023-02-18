@@ -10,12 +10,9 @@
 struct SimpleCamera: public Camera {
     glm::vec3 position;
     glm::vec3 direction;
+    glm::vec3 right, up;
 
-    SimpleCamera(glm::vec3 position, glm::vec3 direction){
-        this->position = position;
-        this->direction = direction;
-    }
-
+    SimpleCamera(glm::vec3 position, glm::vec3 direction, glm::vec3 up_hint = glm::vec3(0,0,1));
     virtual std::pair<glm::vec3, glm::vec3> sampleRay(float x, float y) const override;
 };
 
