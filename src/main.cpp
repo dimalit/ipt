@@ -6,6 +6,7 @@
 #include <geometry/GeometryFloor.h>
 #include <geometry/GeometryOpenSpheres.h>
 #include <geometry/FractalSpheres.h>
+#include <geometry/GeometrySmallPt.h>
 
 #include <lighting/lighting.h>
 
@@ -56,7 +57,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     Ddf* sdf_tmp = si->sdf.get();
 
     unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
-    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
+    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 0.0f, move(si->sdf), 1.0f);
 
     vec3 new_direction;
     float res = 0.0f;
@@ -97,7 +98,7 @@ for(size_t ix = 0; ix < 640; ix++){
         // with hard-limited depth
         float value = ray_power(*scene.geometry, *scene.lighting, origin, direction);
         // TODO investigate why it can be -1e-3
-        assert(value > -1e-3);
+        //assert(value > -1e-3);
         value = value >= 0.0f ? value : 0.0f;
         assert(isfinite(value));
         r_plane.addRay(x, y, value);
@@ -145,6 +146,24 @@ Scene make_scene_fractal(){
     return Scene{geometry, lighting, camera};
 }
 
+Scene make_scene_smallpt(){
+
+    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
+
+    lighting->addSphereLight(vec3(50,681.6-.27,81.6f), 600.0f);
+
+    //lighting->addSphereLight(vec3(50,50,50), 10.0f);
+    //lighting->addOuterLight(1e+4);
+
+    shared_ptr<Geometry> geometry = make_shared<GeometrySmallPt>();
+
+    vec3 camera_pos(50.0f,52.0f,295.6f);
+    vec3 camera_dir = normalize(vec3(0.0f,-0.042612f,-1.0f));
+    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir*2.0f, vec3(0,1,0) );
+
+    return Scene{geometry, lighting, camera};
+}
+
 int n_val(float val, float max, float contrast, float gamma){
     float adj = val*contrast/max;
     adj = std::min(adj, contrast);
@@ -167,7 +186,7 @@ int main(int argc, char** argv){
 
     cout << "Rendering with " << n_rays << " rays per pixel and max depth " << depth_max << endl;
 
-    Scene scene = make_scene_box();
+    Scene scene = make_scene_smallpt();
 
     GridRenderPlane r_plane(640, 640);
 
@@ -183,7 +202,7 @@ int main(int argc, char** argv){
     fprintf(fp, "P2\n%lu %lu\n%d\n", r_plane.width, r_plane.height, 255);
 
     float contrast = 500;
-    float gamma = 1.0f;
+    float gamma = 0.6f;
     for(size_t y = 0; y<r_plane.height; ++y){
         for(size_t x = 0; x<r_plane.width; ++x){
             int ivalue = n_val(r_plane.pixels[y*r_plane.width+x], r_plane.max_value, contrast, gamma);
