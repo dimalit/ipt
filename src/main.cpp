@@ -1,6 +1,7 @@
 #include "GridRenderPlane.h"
 #include "SimpleCamera.h"
 #include "CollectionLighting.h"
+#include "gui.h"
 
 #include <geometry/GeometrySphereInBox.h>
 #include <geometry/GeometryFloor.h>
@@ -18,6 +19,7 @@
 
 #include <memory>
 #include <iostream>
+#include <thread>
 
 #include <cstdio>
 
@@ -164,7 +166,7 @@ Scene make_scene_smallpt(){
     return Scene{geometry, lighting, camera};
 }
 
-int n_val(float val, float max, float contrast, float gamma){
+static int n_val(float val, float max, float contrast, float gamma){
     float adj = val*contrast/max;
     adj = std::min(adj, contrast);
     adj = std::max(adj, 1.0f);
@@ -190,7 +192,18 @@ int main(int argc, char** argv){
 
     GridRenderPlane r_plane(640, 640);
 
-    render(scene, r_plane, n_rays);
+    Gui gui;
+
+    std::thread th([&scene, &gui, &r_plane](){
+       render(scene, gui, n_rays);
+       gui.finalize();
+       cout << "Saving to result.png" << endl;
+       gui.save("result.png");
+    });
+
+    gui.work();
+    th.detach();
+    //th.join();
 
     cout << "Max value = " << r_plane.max_value << endl;
 
