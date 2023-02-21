@@ -9,7 +9,8 @@ using namespace cimg_library;
 
 Gui::Gui()
     :image(640, 640),
-     display(image, "IPT", 2)
+     display(image, "IPT", 2),
+     hist_display(400,300,"histogram")
 {
     value_counter.reserve(640);
     for(size_t i=0; i<640; ++i)
@@ -50,7 +51,7 @@ void Gui::work(){
 CImg<float> Gui::normalize(const CImg<float>& arg){
     float contrast = 500;
     float gamma = 0.6;
-    CImg<float> adj = arg*contrast/arg.max();
+    CImg<float> adj = arg*contrast/arg.kth_smallest(arg.width()*arg.height()*0.95);
     adj = adj.min(contrast).max(1.0f);
     CImg<float> res = (adj.log()/log(contrast)).pow(gamma);
     return res;
@@ -74,6 +75,12 @@ void Gui::addRay(float x, float y, float value){
         CImg<float> img4text = image;
         draw_text_overlay(img4text);
         display.display(normalize(img4text));
+        float max = image.kth_smallest(image.width()*image.height()*0.95);
+        float color = 1.0f;
+        int n_buckets = 400;
+        CImg<float> hist = (+image).histogram(n_buckets, max/n_buckets, max);
+        CImg<float>(400,300).fill(0).draw_graph(hist, &color).display(hist_display);
+        cout << "max=" << max << endl;
     }
 }
 

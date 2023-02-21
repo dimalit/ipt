@@ -13,6 +13,7 @@ class Gui: public RenderPlane {
 private:
     cimg_library::CImg<float> image;
     cimg_library::CImgDisplay display;
+    cimg_library::CImgDisplay hist_display;
     size_t addRay_counter = 0;
     std::vector<std::vector<size_t>> value_counter;
 public:
