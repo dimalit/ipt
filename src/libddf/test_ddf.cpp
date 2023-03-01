@@ -19,6 +19,18 @@ bool eq(float a, float b){
     return abs(a-b) < EPS;
 }
 
+mat3 tilt_mat(const vec3& to){
+    vec3 n_to = glm::normalize(to);
+    glm::vec3 z = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 axis = cross(z, n_to);
+    // HACK corner case to=z
+    if(length(axis)<1e-6)
+        axis = glm::vec3(1.0f, 0.0f, 0.0f);
+    float cosinus = dot(z,n_to);
+    mat3 m = rotate(glm::identity<glm::mat4>(), (float)acos(cosinus), axis);
+    return m;
+}
+
 class FigFixture {
 private:
     CImg<float> vertices;
@@ -46,7 +58,7 @@ protected:
         return mat;
     }
 
-    void vector(const vec3& start, const vec3& dir, float opacity = 1.0f){
+    void line(const vec3& start, const vec3& dir, float opacity = 1.0f){
 
         mat3 mat = camera_mat();
 
@@ -94,8 +106,9 @@ protected:
         opacities.fill(0.5f);
         this->opacities.append(opacities);
     }
-    void upper_half_sphere(float radius = 1.0f, const vec3& pos = vec3()){
-        mat3 mat = camera_mat();
+    void upper_half_sphere(float radius = 1.0f, const vec3& pos = vec3(), const vec3& dir = vec3(0,0,1)){
+        mat3 tilt = tilt_mat(dir);
+        mat3 mat = camera_mat()*tilt;
         vec3 r_pos = mat*pos*1000.0f;
         float r_radius = radius*1000;
 
@@ -149,11 +162,16 @@ protected:
     void point(const vec3& pos){
         sphere(0.01, pos);
     }
-    void quad(const vec3& p1, const vec3& p2, const vec3& p3, const vec3& p4){}
+    void quad(const vec3& p1, const vec3& p2, const vec3& p3, const vec3& p4){
+        line(p1, p2-p1);
+        line(p2, p3-p2);
+        line(p3, p4-p3);
+        line(p4, p1-p4);
+    }
     void axes(){
-        vector(vec3(-1, 0, 0), vec3(2.0f,0,0), 0.5f);
-        vector(vec3(0, -1, 0), vec3(0,2.0f,0), 0.5f);
-        vector(vec3(0, 0, -1), vec3(0,0,2.0f), 0.5f);
+        line(vec3(-1, 0, 0), vec3(2.0f,0,0), 0.5f);
+        line(vec3(0, -1, 0), vec3(0,2.0f,0), 0.5f);
+        line(vec3(0, 0, -1), vec3(0,0,2.0f), 0.5f);
         point(vec3(1.05f,0,0));
         point(vec3(0,1.05f,0));
         point(vec3(0,0,1.05f));
@@ -175,9 +193,9 @@ TEST_CASE_METHOD(FigFixture, "Basic checks for DDFs"){
         REQUIRE(eq(ud.max_value,0.5f/M_PI));
         REQUIRE(!ud.isSingular());
         upper_half_sphere();
-        vector(vec3(), vec3(0,0,1));
-        vector(vec3(), vec3(1,1,1));
-        vector(vec3(), vec3(1,1,-1));
+        line(vec3(), vec3(0,0,1));
+        line(vec3(), vec3(1,1,1));
+        line(vec3(), vec3(1,1,-1));
         // |
         // V
         REQUIRE(eq(ud.value(vec3(0,0,1)),0.5f/M_PI));
@@ -193,9 +211,9 @@ TEST_CASE_METHOD(FigFixture, "Basic checks for DDFs"){
         REQUIRE(!cd.isSingular());
 
         sphere(0.5f, vec3(0.0f,0.0f,0.5f));
-        vector(vec3(), vec3(0,0,1));
-        vector(vec3(), vec3(1,0,EPS/10.0f));
-        vector(vec3(), normalize(vec3(1,1,-1)));
+        line(vec3(), vec3(0,0,1));
+        line(vec3(), vec3(1,0,EPS/10.0f));
+        line(vec3(), normalize(vec3(1,1,-1)));
         // |
         // V
         REQUIRE(eq(cd.value(vec3(0,0,1)),M_1_PI));
@@ -239,7 +257,7 @@ TEST_CASE("Chi^2 for DDFs"){
 //    cout << endl;
 }
 
-TEST_CASE("Chi^2 for superpositions"){
+TEST_CASE_METHOD(FigFixture, "Chi^2 for superpositions"){
 
     unique_ptr<Ddf> sup_self = chain(make_unique<UpperHalfDdf>(), make_unique<UpperHalfDdf>());
     CHECK(check_ddf(*sup_self));
@@ -247,43 +265,67 @@ TEST_CASE("Chi^2 for superpositions"){
     unique_ptr<Ddf> cosine = make_unique<CosineDdf>();
 
     SECTION("Right half-cosine"){
+        sphere(0.5f, vec3(0,0,0.5f));
+        upper_half_sphere(1.0f, vec3(), vec3(1,0,0));
         unique_ptr<Ddf> right_half = make_unique<RotateDdf>(make_unique<UpperHalfDdf>(), vec3(1,0,0));
         unique_ptr<Ddf> half_cosine = chain(move(right_half), move(cosine));
         CHECK(check_ddf(*half_cosine, false));
+        display();
     }
 
     unique_ptr<Ddf> square = make_unique<SquareDdfForTest>(1.0f);
 
     SECTION("Plain 1x1 square"){
+        quad(vec3(-0.5f,-0.5f,1.0f), vec3(0.5f, -0.5f, 1.0f), vec3(0.5f, 0.5f, 1.0f), vec3(-0.5f, 0.5f, 1.0f));
         CHECK(check_ddf(*square, true, 40, 20));
+        display();
     }
 
     SECTION("Square over cosine"){
+        quad(vec3(-0.5f,-0.5f,1.0f), vec3(0.5f, -0.5f, 1.0f), vec3(0.5f, 0.5f, 1.0f), vec3(-0.5f, 0.5f, 1.0f));
+        sphere(0.5f, vec3(0,0,0.5f));
         unique_ptr<Ddf> square_over_cosine = chain(move(square), move(cosine));
         CHECK(check_ddf(*square_over_cosine, false, 40, 20));
+        display();
     }
 
     SECTION("Tilted square over cosine"){
-        unique_ptr<Ddf> tilted_square_over_cosine = chain(make_unique<RotateDdf>(move(square), normalize(vec3(1,1,1))), move(cosine));
+        vec3 tilt = normalize(vec3(1,1,1));
+        mat3 m = tilt_mat(tilt);
+        /////////////////////////
+        quad(m*vec3(-0.5f,-0.5f,1.0f), m*vec3(0.5f, -0.5f, 1.0f), m*vec3(0.5f, 0.5f, 1.0f), m*vec3(-0.5f, 0.5f, 1.0f));
+        sphere(0.5f, vec3(0,0,0.5f));
+        unique_ptr<Ddf> tilted_square_over_cosine = chain(make_unique<RotateDdf>(move(square), tilt), move(cosine));
         CHECK(check_ddf(*tilted_square_over_cosine, false, 80, 40));
+        display();
     }
 
     // Very important case: square over inverse itself!
     // TODO do same copy trick in other tests
     SECTION("Big square over inverse itself"){
+        quad(vec3(-5,-5,1.0f), vec3(5, -5, 1.0f), vec3(5, 5, 1.0f), vec3(-5, 5, 1.0f));
+        line(vec3(), vec3(0,0,1));
         SquareDdfForTest big_square(10.0f);
         float min_value = big_square.value(vec3(0,0,1));
         unique_ptr<Ddf> inverse = make_unique<InvertDdf>(make_unique<SquareDdfForTest>(big_square), min_value);
         unique_ptr<Ddf> square_over_inverse = chain(make_unique<SquareDdfForTest>(big_square), move(inverse));
         CHECK(check_ddf(*square_over_inverse, false));
+        display();
     }
 }
 
-TEST_CASE("Chi^2 for union left+right square"){
-    unique_ptr<Ddf> right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
+TEST_CASE_METHOD(FigFixture, "Chi^2 for union left+right square"){
     unique_ptr<Ddf> left  = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(-1,0,1)));
+    unique_ptr<Ddf> right = make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), normalize(vec3(1,0,1)));
+
+    mat3 m = tilt_mat(vec3(-1,0,1));
+    quad(m*vec3(-0.5f,-0.5f,1.0f), m*vec3(0.5f, -0.5f, 1.0f), m*vec3(0.5f, 0.5f, 1.0f), m*vec3(-0.5f, 0.5f, 1.0f));
 
     SECTION("1:1"){
+        m = tilt_mat(vec3(1,0,1));
+        quad(m*vec3(-0.5f,-0.5f,1.0f), m*vec3(0.5f, -0.5f, 1.0f), m*vec3(0.5f, 0.5f, 1.0f), m*vec3(-0.5f, 0.5f, 1.0f));
+        display();
+
         unique_ptr<Ddf> both  = unite(move(left), 1.0f, move(right), 1.0f);
         CHECK(check_ddf(*both, true, 40, 40));
     }
@@ -292,9 +334,14 @@ TEST_CASE("Chi^2 for union left+right square"){
         CHECK(check_ddf(*unequal, true, 40, 40));
     }
     SECTION("Right 1/2 on horizon"){
+        m = tilt_mat(vec3(1,0,0));
+        quad(m*vec3(-0.5f,-0.5f,1.0f), m*vec3(0.5f, -0.5f, 1.0f), m*vec3(0.5f, 0.5f, 1.0f), m*vec3(-0.5f, 0.5f, 1.0f));
+        upper_half_sphere();
+
         unique_ptr<Ddf> right_on_horizon = chain(make_unique<RotateDdf>(make_unique<SquareDdfForTest>(), vec3(1,0,0)), make_unique<UpperHalfDdf>());
         SECTION("Just right"){
             CHECK(check_ddf(*right_on_horizon, false, 80, 80));
+            display();
         }
         SECTION("Union left 1 + right 1/2 on horizon 2.5"){
             // TODO check here that integral equal 2.25/3.5=0.64 (it is)
