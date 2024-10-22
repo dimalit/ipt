@@ -11,11 +11,6 @@ using namespace std;
 
 size_t Ddf::object_counter = 0;
 
-
-bool p_hit(float prob){
-    return randf() < prob;
-}
-
 class segregated_allocator {
 
     static std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
@@ -59,9 +54,8 @@ void Ddf::operator delete(void* ptr){
 }
 
 SphericalDdf::SphericalDdf(){
-    max_value = 0.25/M_PI;
 }
-vec3 SphericalDdf::trySample() const {
+vec3 SphericalDdf::sample() const {
     float u1 = randf()*2.0f - 1.0f;
     float u2 = randf();
     float alpha = acos(u1);
@@ -71,13 +65,12 @@ vec3 SphericalDdf::trySample() const {
 }
 float SphericalDdf::value( vec3 ) const {
     // TODO assert length = 1?
-    return max_value;
+    return 0.25/M_PI;
 }
 
 UpperHalfDdf::UpperHalfDdf(){
-    max_value = 0.5f/M_PI;
 }
-vec3 UpperHalfDdf::trySample() const {
+vec3 UpperHalfDdf::sample() const {
     float u1 = randf();
     float u2 = randf();
     float alpha = acos(u1);
@@ -90,13 +83,12 @@ float UpperHalfDdf::value( vec3 arg ) const {
     // TODO function for this like clip()?
     if(arg.z < 0.0f)
         return 0.0f;
-    return max_value;
+    return 0.5f/M_PI;
 }
 
 CosineDdf::CosineDdf(){
-    max_value = 1.0f/M_PI;
 }
-vec3 CosineDdf::trySample() const {
+vec3 CosineDdf::sample() const {
     float u1 = randf();
     float u2 = randf();
     float cos_alpha = sqrt(u1);
@@ -127,25 +119,6 @@ public:
     }
 };
 
-template<class P=Ddf*>
-class SuperpositionDdf: public Ddf {
-
-private:
-    P source, dest;
-    static float magic_compute_max_pdf(Ddf* source, Ddf* dest);
-
-public:
-
-    SuperpositionDdf(P _source, P _dest);
-
-    virtual float value( glm::vec3 x ) const override {
-        return source->value(x) * dest->value(x) / dest->max_value;
-    }
-
-    virtual glm::vec3 trySample() const override;
-};
-
-// TODO Indicate somehow that trySample should always succeed!
 struct UnionDdf: public Ddf {
     vector< unique_ptr<Ddf>, segregated_allocator_class<unique_ptr<Ddf>> > components;
     vector< float, segregated_allocator_class<float> > weights;
@@ -153,44 +126,14 @@ struct UnionDdf: public Ddf {
     UnionDdf(){
     }
     // weight eqals to sum of weights
-    virtual glm::vec3 trySample() const override;
+    virtual glm::vec3 sample() const override;
     virtual float value( vec3 arg ) const override;
 };
-
-template<class P>
-SuperpositionDdf<P>::SuperpositionDdf(P _source, P _dest)
-    :source(move(_source)), dest(move(_dest)){
-
-    assert(source && dest);
-    assert(!source->isSingular() || !dest->isSingular());
-    // this limits applying SuperpositionDdf recursively!
-    assert(!isnan(dest->max_value));
-
-    max_value = std::numeric_limits<float>::quiet_NaN(); //magic_compute_max_pdf(source.get(), dest.get());
-
-    // total_area = source_integral * k; (k=dest->max_pdf)
-    // hit_area = this_area
-    // hit_rate = hit_area / total_area;
-    // adjust result to have result = this_area / 1.0
-    //full_theoretical_weight *= dest->max_value;    // and mult by source_integal, but this is implicit
-}
-
-template<class P>
-vec3 SuperpositionDdf<P>::trySample() const {
-
-    vec3 x = source->trySample();
-    if(x == vec3())         // fail if fail
-        return x;
-
-    bool hit = p_hit( dest->value( x ) / dest->max_value );
-
-    return hit ? x : vec3();
-}
 
 // As from different points Union distribution looks differently -
 // it would fail with different rate for different points,
 // thus modeling difference in lighting
-vec3 UnionDdf::trySample() const {
+vec3 UnionDdf::sample() const {
     vec3 res;
     if(components.size() == 0)
         return vec3();
@@ -200,7 +143,7 @@ vec3 UnionDdf::trySample() const {
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
-            res = components[i]->trySample();
+            res = components[i]->sample();
             break;
         }
     }// for
@@ -225,7 +168,7 @@ std::unique_ptr<Ddf> unite(unique_ptr<Ddf> a, float ka, unique_ptr<Ddf> b, float
     using namespace ::detail;
 
     if(a==nullptr)
-        return unite(make_unique<UnionDdf>(), 0.0f, move(b), 1.0f);
+        return unite(make_unique<UnionDdf>(), 0.0f, std::move(b), 1.0f);
     else if(b==nullptr)
         return unite(make_unique<UnionDdf>(), 0.0f, move(a), 1.0f);
 
@@ -287,79 +230,6 @@ std::unique_ptr<Ddf> unite(unique_ptr<Ddf> a, float ka, unique_ptr<Ddf> b, float
         return res;
 
     }// else
-}
-
-// NB res and args can be null!
-unique_ptr<Ddf> chain(unique_ptr<Ddf> source, unique_ptr<Ddf> dest){
-
-    using namespace ::detail;
-
-    if(!source)
-        return dest;
-    if(!dest)
-        return source;
-
-    UnionDdf* u_source = dynamic_cast<UnionDdf*>(source.get());
-    UnionDdf* u_dest = dynamic_cast<UnionDdf*>(dest.get());
-
-    if( u_source ){
-        if( u_dest ){
-            // make cross-product
-            // TODO do this algorithm nicer?!
-            unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
-            for( unique_ptr<Ddf>& src: u_source->components ){
-                size_t i;
-                i = 0;
-                for( unique_ptr<Ddf>& dst: u_dest->components){
-
-                    size_t j;
-                    j = 0;
-
-                    unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(src.get(), dst.get());
-                    res->components.push_back(move(sup));
-                    res->weights.push_back(u_source->weights[i]*u_dest->weights[j]);
-
-                    ++j;
-                }// for dst
-                res->owning_pointers.push_back(move(src));
-                ++i;
-            }// for src
-
-            move(u_dest->components.begin(), u_dest->components.end(), res->owning_pointers.end());
-
-            return res;
-        }
-        else{
-            // apply b to every a
-            std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
-            // TODO normal for with i
-            size_t i=0;
-            for( unique_ptr<Ddf>& c: u_source->components ){
-                unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(c.get(), dest.get());
-                res->components.push_back( move(sup) );
-                res->weights.push_back(u_source->weights[i++]);
-                res->owning_pointers.push_back(move(c));
-            }// for
-            return res;
-        }
-    }
-    else if( u_dest ){
-        // apply a to every b
-        std::unique_ptr<UnionDdf> res = std::make_unique<UnionDdf>();
-        // TODO normal for with i
-        size_t i=0;
-        for( unique_ptr<Ddf>& c: u_dest->components ){
-            unique_ptr<Ddf> sup = make_unique<SuperpositionDdf<Ddf*>>(source.get(), c.get());
-            res->components.push_back( move(sup) );
-            res->weights.push_back(u_dest->weights[i++]);
-            res->owning_pointers.push_back(move(c));
-        }// for
-        return res;
-    }
-    else{
-        unique_ptr<Ddf> res = make_unique<SuperpositionDdf<unique_ptr<Ddf>>>(move(source), move(dest));
-        return res;
-    }
 }
 
 // TODO Add free functions with dynamic_cast for classes above!

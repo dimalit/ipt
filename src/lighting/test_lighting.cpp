@@ -15,7 +15,7 @@ float uniform_sampling(vec3 origin, Ddf* sdf, const Light& light){
 
     float sum = 0.0f;
     for(size_t i = 0; i < n_samples; ++i){
-        vec3 dir = sdf->trySample();
+        vec3 dir = sdf->sample();
         assert(dir != vec3());
         optional<light_intersection> inter = light.traceRay(origin, dir);
         if(!inter.has_value())
@@ -33,7 +33,7 @@ float directed_sampling(vec3 origin, Ddf* sdf, const Light& light){
 
     float sum = 0.0f;
     for(size_t i = 0; i < n_samples; ++i){
-        vec3 dir = light_ddf->trySample();
+        vec3 dir = light_ddf->sample();
 
         // add dark faces as 0's
         if(dir == vec3())

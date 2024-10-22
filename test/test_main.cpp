@@ -37,7 +37,7 @@ void test_light_ddfs(){
 
 void test_singulars(){
     unique_ptr<Ddf> mirror = make_unique<MirrorDdf>();
-    assert(mirror->trySample()==vec3(0.0f, 0.0f, 1.0f));
+    assert(mirror->sample()==vec3(0.0f, 0.0f, 1.0f));
 
     PointLight p_light(vec3(0.0f, 0.0f, 1.0f), 0.1f);
     assert(p_light.area==0);
@@ -45,21 +45,6 @@ void test_singulars(){
 
     unique_ptr<Ddf> c_ddf = make_unique<CosineDdf>();
     SphereLight s_light(vec3(0.0f, 0.0f, 1.3f), 1.0f);
-
-    unique_ptr<Ddf> point2cosine = chain(p_light.lightToPoint(vec3()), move(c_ddf));
-    unique_ptr<Ddf> sphere2mirror = chain(s_light.lightToPoint(vec3()), move(mirror));
-
-    // TODO check that point2mirror will assert!
-    //shared_ptr<Ddf> point2mirror = chain(p_light.lightToPoint(vec3()), mirror);
-
-    vector<Ddf*> vec{point2cosine.get(), sphere2mirror.get()};
-    for(const Ddf* e: vec){
-        vec3 res;
-        do{
-            res = e->trySample();
-        }while(res==vec3());
-        cout << res.x << " " << res.y << " " << res.z << endl;
-    }
 }
 
 int main(){

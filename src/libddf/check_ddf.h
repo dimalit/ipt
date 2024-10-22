@@ -14,7 +14,7 @@ private:
     float side;
 public:
     SquareDdfForTest(float _side = 1.0f): side(_side){}
-    virtual glm::vec3 trySample() const override {
+    virtual glm::vec3 sample() const override {
         float u1 = randf()-0.5f;
         float u2 = randf()-0.5f;
         glm::vec3 pos = glm::vec3(0,0,1) + glm::vec3(u1*side,0,0) + glm::vec3(0,u2*side,0);

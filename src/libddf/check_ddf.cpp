@@ -46,7 +46,7 @@ void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
 
         vec3 dir = vec3();
         while(dir == vec3())
-            dir = sph.trySample();
+            dir = sph.sample();
 
         float value = ddf.value(dir);
         if(value > ddf_max)
@@ -129,7 +129,7 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
     for(size_t i=0; i<N; ++i){
 
         ++total_tries;
-        vec3 vec = ddf.trySample();
+        vec3 vec = ddf.sample();
         if(vec == vec3()){
             --i;
             continue;
@@ -185,7 +185,6 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
     }// for i
 
     cout << "\tDDF integral = " << ddf_integral << endl;
-    cout << "\tDDF max      = " << ddf_max << " / " << ddf.max_value << endl;
 
     cout << "\tExperimental Total = " << exp_counter << endl;
     cout << "\tTheoretical total  = " << theor_counter << endl;
@@ -200,7 +199,6 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
 
     return chi2 > chi_floor && chi2 < chi_ceil &&
            success_ratio/ddf_integral > 0.95f && success_ratio/ddf_integral < 1.05f &&
-           (!strict_integral || ddf_integral > 0.95f && ddf_integral < 1.05f) &&
-           (isnan(ddf.max_value) || ddf_max/ddf.max_value > 0.9 && ddf_max/ddf.max_value < 1.1);
+           (!strict_integral || ddf_integral > 0.95f && ddf_integral < 1.05f);
 }
 

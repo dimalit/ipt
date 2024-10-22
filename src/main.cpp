@@ -66,7 +66,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     float res = 0.0f;
 
     for(size_t i=0; i<n_rays; ++i){
-        new_direction = mix_ddf->trySample();
+        new_direction = mix_ddf->sample();
         // possible dimming because of this
         if(new_direction != vec3()){
             // correct by light_ddf distribution!

@@ -13,23 +13,11 @@
 
 struct Ddf {
 
-    // may return 0 if sampling failed
-    // this is used to implicitly lower distribution's weight
-    virtual glm::vec3 trySample() const = 0;
+    // Sample a signle vec3 value. Always succeedes
+    virtual glm::vec3 sample() const = 0;
 
-    void seed();
-
-    // will return NaN if singular
+    // Get value in direction of arg. Will return NaN if singular
     virtual float value( glm::vec3 arg ) const = 0;
-
-    // used in sampling
-    // is infinity if singular
-    // must be initialized in subclasses
-    float max_value = std::numeric_limits<float>::signaling_NaN();
-
-    bool isSingular() const {
-        return max_value == std::numeric_limits<float>::infinity();
-    }
 
     static size_t object_counter;
 
@@ -53,6 +41,5 @@ struct Ddf {
 };
 
 extern std::unique_ptr<Ddf> unite(std::unique_ptr<Ddf> a = nullptr, float ka=1.0f, std::unique_ptr<Ddf> b = nullptr, float kb=1.0f);
-extern std::unique_ptr<Ddf> chain(std::unique_ptr<Ddf> source, std::unique_ptr<Ddf> dest);
 
 #endif // DDF_H
