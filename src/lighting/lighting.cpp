@@ -35,11 +35,11 @@ static float intersection_with_sphere(float radius, vec3 origin, vec3 direction)
     return t;
 }
 
-class LightToDistribution: public Ddf {
+class DdfFromLight: public Ddf {
     const Light* light;
     glm::vec3 origin;
 public:
-    LightToDistribution(const Light* light, glm::vec3 origin) {
+    DdfFromLight(const Light* light, glm::vec3 origin) {
         this->light = light;
         this->origin = origin;
     }
@@ -47,7 +47,7 @@ public:
     virtual float value( glm::vec3 direction ) const override;
 };
 
-glm::vec3 LightToDistribution::sample() const {
+glm::vec3 DdfFromLight::sample() const {
     vec3 dir;
     light_intersection inter = light->sample();
     dir = normalize(inter.position-origin);
@@ -58,7 +58,7 @@ glm::vec3 LightToDistribution::sample() const {
     return dir;
 }
 
-float LightToDistribution::value( glm::vec3 direction ) const {
+float DdfFromLight::value( glm::vec3 direction ) const {
     // HACK
     std::optional<light_intersection> inter = direction==vec3() ? Lighting::last_sample : light->traceRay(origin, direction);
     if(!inter.has_value())
@@ -73,7 +73,7 @@ float LightToDistribution::value( glm::vec3 direction ) const {
 }
 
 unique_ptr<Ddf> Light::lightToPoint(glm::vec3 pos) const {
-    return make_unique<LightToDistribution>(this, pos);
+    return make_unique<DdfFromLight>(this, pos);
 }
 
 AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t type){

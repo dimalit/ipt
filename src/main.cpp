@@ -1,19 +1,12 @@
 #include "GridRenderPlane.h"
-#include "SimpleCamera.h"
-#include "CollectionLighting.h"
 #include "gui.h"
 
-#include <geometry/GeometrySphereInBox.h>
-#include <geometry/GeometryFloor.h>
-#include <geometry/GeometryOpenSpheres.h>
-#include <geometry/FractalSpheres.h>
-#include <geometry/GeometrySmallPt.h>
-
-#include <lighting/lighting.h>
+#include "sample_scenes.h"
 
 #include <libddf/ddf.h>
-#include "tracer_interfaces.h"
 #include <randf.h>
+
+#include "tracer_interfaces.h"
 
 #include <glm/geometric.hpp>
 
@@ -40,7 +33,7 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     std::optional<light_intersection> li   = lighting.traceRayToLight(origin, direction);
 
     // 1 check light hit
-    if(li.has_value() && depth>0){
+    if(li.has_value()){
         // if not obscured by geometry
         if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
             assert(isnan(li->surface_power) || li->surface_power >= 0.0f);
@@ -67,17 +60,10 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
 
     for(size_t i=0; i<n_rays; ++i){
         new_direction = mix_ddf->sample();
-        // possible dimming because of this
-        if(new_direction != vec3()){
-            // correct by light_ddf distribution!
-            float multiplier = 1.0f/mix_ddf->value(new_direction)*sdf_tmp->value(new_direction);
-            res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
-        }
-//        new_direction = si->sdf->trySample();
-//        // possible dimming because of this
-//        if(new_direction != vec3()){
-//            res += si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
-//        }
+        // to compute integral of ray_power*sdf using sampling from mix_ddf,
+        // we need ray_power*sdf/mix_ddf
+        float multiplier = sdf_tmp->value(new_direction)/mix_ddf->value(new_direction);
+        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
     }
     return isfinite(res) ? res/n_rays : 0.0f;
 }
@@ -113,61 +99,6 @@ void render_sample(const Scene& scene, RenderPlane& r_plane){
     //cout << iy << endl;
     }// for y
 }//render_sample()
-
-Scene make_scene_box(){
-
-    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-
-    //lighting->addPointLight(vec3{0.9f, 0.0f, -0.8f}, 0.1f, 1.0f);
-    // TODO Why it has non-proportional power?
-    //lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.8f}, 0.1f, 1.0f);
-    // radiates down
-    lighting->addAreaLight(vec3{+0.1f, -0.8f-0.1f, -0.15f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
-    // radiates forward
-    //lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.7f-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
-
-    //lighting->addOuterLight(10);
-
-    shared_ptr<Geometry> geometry = make_shared<GeometrySphereInBox>();
-
-    vec3 camera_pos(0.0f, -3.0f, 0.1f);
-    vec3 camera_dir = normalize(vec3(0.0f, 1.0f, -1.0f)-camera_pos);
-    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
-
-    return Scene{geometry, lighting, camera};
-}
-
-Scene make_scene_fractal(){
-    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-    lighting->addSphereLight(vec3(-5.5,0,0), 1);
-
-    shared_ptr<Geometry> geometry = make_shared<FractalSpheres>();
-
-    vec3 camera_pos(0.0f, -4.0f, 0.0f);
-    vec3 camera_dir = vec3(0,1,0);
-    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir );
-
-    return Scene{geometry, lighting, camera};
-}
-
-Scene make_scene_smallpt(){
-
-    shared_ptr<CollectionLighting> lighting = make_shared<CollectionLighting>();
-
-    lighting->addSphereLight(vec3(50,81.6-16.5,81.6), 1.5f);
-    //lighting->addSphereLight(vec3(50,681.6-.27,81.6f), 600.0f);
-
-    //lighting->addSphereLight(vec3(50,50,50), 10.0f);
-    //lighting->addOuterLight(1e+4);
-
-    shared_ptr<Geometry> geometry = make_shared<GeometrySmallPt>();
-
-    vec3 camera_pos(50.0f,52.0f,295.6f);
-    vec3 camera_dir = normalize(vec3(0.0f,-0.042612f,-1.0f));
-    shared_ptr<SimpleCamera> camera = make_shared<SimpleCamera>( camera_pos, camera_dir*2.0f, vec3(0,1,0) );
-
-    return Scene{geometry, lighting, camera};
-}
 
 static int n_val(float val, float max, float contrast, float gamma){
     float adj = val*contrast/max;
