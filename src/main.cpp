@@ -29,13 +29,19 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     if(depth==depth_max)
         return 0.0f;
 
+    // Stats: origin, depth
+
+    // Stats: si
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
+
+    // Stats: li
     std::optional<light_intersection> li   = lighting.traceRayToLight(origin, direction);
 
     // 1 check light hit
     if(li.has_value()){
         // if not obscured by geometry
         if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
+            // Stats: true (light hit)
             assert(isnan(li->surface_power) || li->surface_power >= 0.0f);
             // HACK For point light
             return isfinite(li->surface_power) ? li->surface_power : 1.0f;
@@ -44,6 +50,8 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
 
     if(!si.has_value())
         return 0.0f;
+
+    // Stats: true (surface hit)
 
     // 2 continue to geometry
     //DEBUG for geometry debugging
@@ -58,13 +66,25 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     vec3 new_direction;
     float res = 0.0f;
 
+    // Stats: child node
     for(size_t i=0; i<n_rays; ++i){
+
         new_direction = mix_ddf->sample();
+
+        if( new_direction == vec3() ){
+            // Stats: false (miss)
+            continue;
+        }
+
         // to compute integral of ray_power*sdf using sampling from mix_ddf,
         // we need ray_power*sdf/mix_ddf
+        // Stats: multiplier
         float multiplier = sdf_tmp->value(new_direction)/mix_ddf->value(new_direction);
+        // Stats: albedo
         res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
     }
+
+    // Stats: result
     return isfinite(res) ? res/n_rays : 0.0f;
 }
 
