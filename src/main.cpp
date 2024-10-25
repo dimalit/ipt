@@ -20,28 +20,48 @@
 using namespace glm;
 using namespace std;
 
+// note: root will manage memory for all children
+class StatsNode {
+public:
+    void put(std::string key, std::string value){}
+    void put(std::string key, bool value){}
+    void put(std::string key, int64_t value){}
+    void put(std::string key, uint64_t value){}
+    void put(std::string key, float value){}
+    void put(std::string key, glm::vec3 value){}
+    void addChild(std::string key, StatsNode* child){}
+    ~StatsNode(){
+        // delete children
+    }
+};
+
 size_t n_rays = 5;
 size_t depth_max = 3;
 
 // TODO light_hint is not very good solution!
-float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth=0){
+float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, StatsNode* stats){
 
     if(depth==depth_max)
         return 0.0f;
 
     // Stats: origin, depth
+    stats->put("origin", origin);
+    stats->put("depth", depth);
 
-    // Stats: si
     std::optional<surface_intersection> si = geometry.traceRay(origin, direction);
-
-    // Stats: li
     std::optional<light_intersection> li   = lighting.traceRayToLight(origin, direction);
 
     // 1 check light hit
     if(li.has_value()){
         // if not obscured by geometry
         if(!si.has_value() || length(si->position-origin) > length(li->position-origin)){
-            // Stats: true (light hit)
+
+            // Stats: li, true (light hit)
+            stats->put("li", true);
+            stats->put("li_position", li->position);
+            stats->put("li_power", li->surface_power);
+            stats->put("li_normal", li->normal);
+
             assert(isnan(li->surface_power) || li->surface_power >= 0.0f);
             // HACK For point light
             return isfinite(li->surface_power) ? li->surface_power : 1.0f;
@@ -51,7 +71,10 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
     if(!si.has_value())
         return 0.0f;
 
-    // Stats: true (surface hit)
+    // Stats: si, true (surface hit)
+    stats->put("si", true);
+    stats->put("si_position", si->position);
+    stats->put("si_albedo", si->albedo);
 
     // 2 continue to geometry
     //DEBUG for geometry debugging
@@ -72,28 +95,34 @@ float ray_power(const Geometry& geometry, const Lighting& lighting, vec3 origin,
         new_direction = mix_ddf->sample();
 
         if( new_direction == vec3() ){
-            // Stats: false (miss)
             continue;
         }
+
+        // Stats: false (miss)
+        StatsNode* child_stats = new StatsNode();
+        stats->addChild("secondary_rays", child_stats);
 
         // to compute integral of ray_power*sdf using sampling from mix_ddf,
         // we need ray_power*sdf/mix_ddf
         // Stats: multiplier
         float multiplier = sdf_tmp->value(new_direction)/mix_ddf->value(new_direction);
-        // Stats: albedo
-        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1);
+        child_stats->put("multiplier", multiplier);
+        assert(isfinite(multiplier));
+        // Stats: child ray_power()
+        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1, child_stats);
     }
 
     // Stats: result
-    return isfinite(res) ? res/n_rays : 0.0f;
+    res = isfinite(res) ? res/n_rays : 0.0f;
+    stats->put("result", res);
+    return res;
 }
 
-void render_sample(const Scene& scene, RenderPlane& r_plane){
+void render_sample(const Scene& scene, RenderPlane& r_plane, StatsNode* stats){
     //        float x = randf();
     //        float y = randf();
     for(size_t iy = 0; iy < 640; iy++){
     for(size_t ix = 0; ix < 640; ix++){
-
 
         float x = (ix+randf())/640.0f;
         float y = (iy+randf())/640.0f;
@@ -103,17 +132,25 @@ void render_sample(const Scene& scene, RenderPlane& r_plane){
         if(y==1.0f)
             y=nextafter(y, 0.0f);
 
+        StatsNode* pixel_stats = new StatsNode();
+        pixel_stats->put("x", x);
+        pixel_stats->put("y", y);
+
         vec3 origin, direction;
         tie(origin, direction) = scene.camera->sampleRay(x, y);
+        pixel_stats->put("origin", origin);
+        pixel_stats->put("direction", direction);
 
         // ray bouncing recursion
         // with hard-limited depth
-        float value = ray_power(*scene.geometry, *scene.lighting, origin, direction);
+        float value = ray_power(*scene.geometry, *scene.lighting, origin, direction, 0, pixel_stats);
         // TODO investigate why it can be -1e-3
         //assert(value > -1e-3);
         value = value >= 0.0f ? value : 0.0f;
         assert(isfinite(value));
         r_plane.addRay(x, y, value);
+
+        stats->addChild("pixels", pixel_stats);
 
     }// for x
     //cout << iy << endl;
@@ -142,17 +179,22 @@ int main(int argc, char** argv){
 
     cout << "Rendering with " << n_rays << " rays per pixel and max depth " << depth_max << endl;
 
-    Scene scene = make_scene_smallpt();
+    Scene scene = make_scene_lit_corner();
 
     GridRenderPlane r_plane(640, 640);
 
     Gui gui;
 
+    StatsNode stats;
+
     std::atomic<bool> termination_requested = false;
-    std::thread th([&scene, &gui, &termination_requested](){
+    std::thread th([&scene, &gui, &termination_requested, &stats](){
         // render infinitely
         for(size_t sample=0;; ++sample){
-            render_sample(scene, gui);
+            StatsNode* sample_stats = new StatsNode();
+            stats.addChild("samples", sample_stats);
+            sample_stats->put("sample", sample);
+            render_sample(scene, gui, sample_stats);
             cout << "Sample " << (sample+1) << endl;
             if(termination_requested)
                 break;

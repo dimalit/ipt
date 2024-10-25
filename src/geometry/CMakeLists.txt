@@ -11,6 +11,8 @@ add_library(geometry STATIC
     FractalSpheres.cpp
     GeometrySmallPt.h
     GeometrySmallPt.cpp
+    GeometryCorner.h
+    GeometryCorner.cpp
 )
 target_link_libraries(geometry PRIVATE ddf)
 target_include_directories(geometry PRIVATE ..)
