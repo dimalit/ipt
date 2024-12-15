@@ -19,6 +19,7 @@ public:
     enum type_t {TYPE_DIAMOND, TYPE_TRIANLE};
 private:
     glm::vec3 x_axis, y_axis;
+    glm::mat3 inverse_matrix;
     type_t type;
 
 public:

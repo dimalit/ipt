@@ -84,6 +84,9 @@ AreaLight::AreaLight(vec3 origin, vec3 x_axis, vec3 y_axis, float power, type_t 
     this->type = type;
     float full_area = length(cross(x_axis, y_axis));
     area = type==TYPE_DIAMOND ? full_area : full_area/2.0f;
+
+    mat3 matrix(x_axis, y_axis, cross(x_axis, y_axis));
+    this->inverse_matrix = inverse(matrix);
 }
 
 // TODO Maybe use here sampling parameters to adjust surface_power?
@@ -101,10 +104,10 @@ light_intersection AreaLight::sample() const {
 }
 
 // TODO Test and repair it in case ray lies in the plane of this light source
-std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 direction) const {    
-    // <origin+dir*t-this->origin, n>=0
-    // origin*n + t*dir*n - this->origin*n = 0
-    // t = n*(this->origin-origin) / n*dir
+std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 direction) const {
+    // <origin+dir*t-this->position, n>=0
+    // origin*n + t*dir*n - this->position*n = 0
+    // t = n*(this->position-origin) / n*dir
     vec3 n = normalize(cross(x_axis, y_axis));
 
     float n_dir = dot(n, direction);
@@ -116,16 +119,15 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
     float t = dot(n, this->position-origin) / n_dir;
     if(t<1e-6)
         return {};
-    vec3 pos = origin + direction*t;
+    vec3 relative_pos = origin + direction*t - this->position;
 
-    float cx = dot(normalize(x_axis), pos-this->position) / length(x_axis);
-    float cy = dot(normalize(y_axis), pos-this->position) / length(y_axis);
+    vec3 coord = inverse_matrix * relative_pos;
 
     bool hit = false;
     if(type == TYPE_DIAMOND)
-        hit = cx >= 0.0f && cx <= 1.0f && cy >= 0.0f && cy <= 1.0f;
+        hit = coord.x >= 0.0f && coord.x <= 1.0f && coord.y >= 0.0f && coord.y <= 1.0f;
     else if(type == TYPE_TRIANLE)
-        hit = cx >= 0.0f && cy >= 0 && cx+cy <= 1.0f;
+        hit = coord.x >= 0.0f && coord.y >= 0.0 && coord.x+coord.y <= 1.0f;
     else {
         assert(false);
     }
@@ -134,7 +136,7 @@ std::optional<light_intersection> AreaLight::traceRay(vec3 origin, vec3 directio
         return {};
 
     light_intersection res;
-    res.position = pos;
+    res.position = position + relative_pos;
     res.normal = normalize(cross(x_axis, y_axis));
     res.surface_power = this->power/this->area;
 
