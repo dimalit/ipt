@@ -49,16 +49,16 @@ void Gui::work(){
 }
 
 CImg<float> Gui::normalize(const CImg<float>& arg){
-    float contrast = 500;
-    float gamma = 0.6;
-    CImg<float> adj = arg*contrast/arg.kth_smallest(arg.width()*arg.height()*0.95);
-    adj = adj.min(contrast).max(1.0f);
-    CImg<float> res = (adj.log()/log(contrast)).pow(gamma);
+    float inv_gamma = 2.2;
+    float max = arg.max(); // arg.kth_smallest(arg.width()*arg.height()*0.95);
+    CImg<float> res = (arg/max).pow(1.0f/inv_gamma).cut(0.0f, 1.0f);
     return res;
 }
 
 // TODO Too complicated!
 void Gui::addRay(float x, float y, float value){
+    lock_guard<mutex> lock(ray_mutex);
+
     size_t ix = x*image.width();
     size_t iy = image.height()-y*image.height();
 
@@ -71,14 +71,14 @@ void Gui::addRay(float x, float y, float value){
     float new_v = sum/value_counter[iy][ix];
     image(ix, iy) = new_v;
 
-    if(++addRay_counter%8000==0){
+    if(++addRay_counter%500000==0){
         CImg<float> img4text = image;
         draw_text_overlay(img4text);
         display.display(normalize(img4text));
-        float max = image.kth_smallest(image.width()*image.height()*0.95);
+        float max = image.max(); // image.kth_smallest(image.width()*image.height()*0.95);
         float color = 1.0f;
         int n_buckets = 400;
-        CImg<float> hist = (+image).histogram(n_buckets, max/n_buckets, max);
+        CImg<float> hist = (+image).histogram(n_buckets, 0.0f, max);
         CImg<float>(400,300).fill(0).draw_graph(hist, &color).display(hist_display);
         cout << "max=" << max << endl;
     }

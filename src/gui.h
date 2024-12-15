@@ -6,6 +6,7 @@
 #include <CImg.h>
 
 #include <vector>
+#include <mutex>
 
 // TODO Add const
 // TODO Deduplicate some parts
@@ -24,6 +25,7 @@ public:
     void finalize();
     void save(const char* path);
 private:
+    std::mutex ray_mutex;
     void draw_text_overlay(cimg_library::CImg<float>& arg);
     static cimg_library::CImg<float> normalize(const cimg_library::CImg<float>& arg);
 };
