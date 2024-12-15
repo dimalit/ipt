@@ -39,9 +39,13 @@ void CollectionLighting::addPointLight(vec3 position, float virtual_radius, floa
 void CollectionLighting::addSphereLight(vec3 position, float radius, float power){
     lights.push_back(make_shared<const SphereLight>(position, radius, power));
 }
-void CollectionLighting::addAreaLight(vec3 corner, vec3 normal, vec3 x_side, float power){
+void CollectionLighting::addSquareLight(vec3 corner, vec3 normal, vec3 x_side, float power){
     vec3 y_side = cross(normal, x_side);
     shared_ptr<const Light> light = make_shared<const AreaLight>(corner, x_side, y_side, power);
+    lights.push_back(light);
+}
+void CollectionLighting::addTriangleLight(glm::vec3 corner, glm::vec3 x_side, glm::vec3 y_side, float power){
+    shared_ptr<const Light> light = make_shared<const AreaLight>(corner, x_side, y_side, power, AreaLight::TYPE_TRIANLE);
     lights.push_back(light);
 }
 

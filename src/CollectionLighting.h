@@ -14,7 +14,8 @@ struct CollectionLighting: public Lighting {
 
     void addPointLight(glm::vec3 position, float virtual_radius, float power=1.0f);
     void addSphereLight(glm::vec3 position, float radius, float power=1.0f);
-    void addAreaLight(glm::vec3 corner, glm::vec3 normal, glm::vec3 x_side, float power=1.0f);
+    void addSquareLight(glm::vec3 corner, glm::vec3 normal, glm::vec3 x_side, float power=1.0f);
+    void addTriangleLight(glm::vec3 corner, glm::vec3 x_side, glm::vec3 y_side, float power=1.0f);
     void addOuterLight(float radius, float power=1.0f);
 };
 
