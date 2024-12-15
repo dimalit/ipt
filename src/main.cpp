@@ -248,7 +248,7 @@ int main(int argc, char** argv){
         Scene scene = make_scene_lit_corner();
         //Scene scene = make_scene_square_lit_by_square();
         // render infinitely
-        for(size_t sample=0;; ++sample){
+        for(static atomic_size_t sample=0;; ++sample){
             StatsNode* sample_stats = new StatsNode();
             stats.addChild("samples", sample_stats);
             sample_stats->put("sample", sample);

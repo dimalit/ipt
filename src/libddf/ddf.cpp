@@ -1,28 +1,26 @@
 #include "ddf_detail.h"
 
+#include <randf.h>
+
 #include <boost/pool/pool.hpp>
 
-#include <functional>
 #include <cassert>
 #include <algorithm>
+#include <map>
 
 using namespace glm;
 using namespace std;
 
-size_t Ddf::object_counter = 0;
+// atomic_size_t Ddf::object_counter = 0;
 
 class segregated_allocator {
 
-    static std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
-    static std::mutex mutex;
+    static thread_local std::map<size_t, std::unique_ptr<boost::pool<>>> pools_map;
 
 public:
 
     // reserves sizeof(void*) bytes more and stores pointer to pool in that space!
     static void* malloc(size_t size){
-
-        std::lock_guard<std::mutex> lock(mutex);
-
         size_t adjusted_size = size + sizeof(boost::pool<>*);
         unique_ptr<boost::pool<>>& ptr = pools_map[size];
         if(ptr==nullptr){
@@ -40,15 +38,13 @@ public:
     }
 
     static void free(void* ptr){
-        std::lock_guard<std::mutex> lock(mutex);
         //cout << "DEALLOCATE " << ptr << endl;
         boost::pool<>** pool_ptr = (boost::pool<>**) ptr;
         boost::pool<>** adjusted_ptr = pool_ptr-1;
         adjusted_ptr[0]->free(adjusted_ptr);
     }
 };
-std::map<size_t, std::unique_ptr<boost::pool<>>> segregated_allocator::pools_map;
-std::mutex segregated_allocator::mutex;
+thread_local std::map<size_t, std::unique_ptr<boost::pool<>>> segregated_allocator::pools_map;
 
 // reserves sizeof(void*) bytes more and stores pointer to pool in that space!
 void* Ddf::operator new(size_t size){

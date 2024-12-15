@@ -80,7 +80,7 @@ void Gui::addRay(float x, float y, float value){
         int n_buckets = 400;
         CImg<float> hist = (+image).histogram(n_buckets, 0.0f, max);
         CImg<float>(400,300).fill(0).draw_graph(hist, &color).display(hist_display);
-        cout << "max=" << max << endl;
+        //cout << "max=" << max << endl;
     }
 }
 

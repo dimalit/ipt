@@ -1,15 +1,13 @@
 #ifndef DDF_H
 #define DDF_H
 
-#include "randf.h"
-
 #include <glm/vec3.hpp>
 
 #include <boost/pool/poolfwd.hpp>
 
 #include <memory>
 #include <iostream>
-#include <map>
+#include <atomic>
 
 struct Ddf {
 
@@ -19,20 +17,20 @@ struct Ddf {
     // Get value in direction of arg. Will return NaN if singular
     virtual float value( glm::vec3 arg ) const = 0;
 
-    static size_t object_counter;
+    //static std::atomic_size_t object_counter;
 
     Ddf(){
-        ++object_counter;
-        static size_t max = 0;
-        if(object_counter>max){
-            max=object_counter;
-            std::cout << "COUNT " << max << std::endl;
-        }
+        // ++object_counter;
+        // static thread_local size_t max = 0;
+        // if(object_counter>max){
+        //     max=object_counter;
+        //     std::cout << "COUNT " << max << std::endl;
+        // }
         //std::cout << "COUNT " << object_counter << " / " << max << std::endl;
     }
 
     virtual ~Ddf(){
-        --object_counter;
+        //--object_counter;
         //std::cout << "COUNT " << object_counter << std::endl;
     }
 
