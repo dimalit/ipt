@@ -25,9 +25,9 @@ Scene make_scene_box(){
     // TODO Why it has non-proportional power?
     //lighting->addSphereLight(vec3{-0.8f, 0.0f, -0.8f}, 0.1f, 1.0f);
     // radiates down
-    lighting->addSquareLight(vec3{+0.1f, -0.8f-0.1f, -0.15f}, vec3(0.0f, 0.0f, -1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
+    lighting->addSquareLight(vec3{+0.1f, -0.8f-0.1f, -0.15f}, vec3(0.0f, 0.0f, +1.0f), vec3{0.0f, 0.2f, 0.0f}, 1.0f);
     // radiates forward
-    //lighting->addAreaLight(vec3{-0.1f, -0.8f, -0.7f-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
+    //lighting->addSquareLight(vec3{-0.1f, -0.8f, -0.7f-0.1f}, vec3(0.0f, 1.0f, 0.0f), vec3{0.0f, 0.0f, 0.2f}, 1.0f);
 
     //lighting->addOuterLight(10);
 

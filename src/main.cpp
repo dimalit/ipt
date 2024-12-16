@@ -91,7 +91,7 @@ float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3
 }
 
 size_t n_rays = 5;
-size_t depth_max = 3;
+size_t depth_max = 4;
 
 // TODO light_hint is not very good solution!
 float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, StatsNode* stats){
@@ -238,21 +238,22 @@ int main(int argc, char** argv){
 
     GridRenderPlane r_plane(640, 640);
 
-    Gui gui;
+    //Scene scene = make_scene_lit_corner();
+    Scene scene = make_scene_box();
+    auto gui = make_shared<Gui>(*scene.camera);
+    scene.camera = gui;     // replace camera with more interactive one
 
     StatsNode stats;
 
     atomic<bool> termination_requested = false;
 
-    auto thread_func = [&gui, &termination_requested, &stats](){
-        Scene scene = make_scene_lit_corner();
-        //Scene scene = make_scene_square_lit_by_square();
+    auto thread_func = [&scene, &gui, &termination_requested, &stats](){
         // render infinitely
         for(static atomic_size_t sample=0;; ++sample){
             StatsNode* sample_stats = new StatsNode();
             stats.addChild("samples", sample_stats);
             sample_stats->put("sample", sample);
-            render_sample(scene, gui, sample_stats);
+            render_sample(scene, *gui, sample_stats);
             cout << "Sample " << (sample+1) << endl;
             if(termination_requested)
                 break;
@@ -260,11 +261,14 @@ int main(int argc, char** argv){
     };
 
     thread t1( thread_func );
+    std::this_thread::sleep_for(chrono::milliseconds(250));
     thread t2( thread_func );
+    std::this_thread::sleep_for(chrono::milliseconds(250));
     thread t3( thread_func );
+    std::this_thread::sleep_for(chrono::milliseconds(250));
     thread t4( thread_func );
 
-    gui.work();
+    gui->work();
 
     termination_requested = true;
     t4.join();
@@ -272,9 +276,9 @@ int main(int argc, char** argv){
     t2.join();
     t1.join();
 
-    gui.finalize();
+    gui->finalize();
     cout << "Saving to result.png" << endl;
-    gui.save("result.png");
+    gui->save("result.png");
 
 //    cout << "Max value = " << r_plane.max_value << endl;
 

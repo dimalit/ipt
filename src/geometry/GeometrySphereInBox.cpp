@@ -13,7 +13,6 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
         {0,1,0},
         {0,0,1},
         {-1,0,0},
-        {0,-1,0},
         {0,0,-1}
     };
 
@@ -21,7 +20,7 @@ std::optional<surface_intersection> GeometrySphereInBox::traceRay(vec3 origin, v
     int intersected_plane = -1;
     bool intersected_sphere = false;
 
-    for(size_t i = 0; i<6; ++i){
+    for(size_t i = 0; i<5; ++i){
         float t = intersection_with_box_plane(planes[i], origin, direction);
         if(t<dist){
             dist = t;
