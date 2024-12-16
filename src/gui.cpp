@@ -35,7 +35,7 @@ static void draw_halo(CImg<float>& img, int cx, int cy, float C, float r0){
     }// y
 }
 
-static CImg<float> bloom(const CImg<float>& img, float cutoff){
+static CImg<float> glare(const CImg<float>& img, float cutoff){
     CImg<float> out(img, false);
     for(int y=0; y<img.height(); ++y){
         for(int x=0; x<img.width(); ++x){
@@ -43,13 +43,8 @@ static CImg<float> bloom(const CImg<float>& img, float cutoff){
             if(val <= cutoff)
                 continue;
 
-            float radius = 0.5f/3.0f*sqrt(val/cutoff);
-            // CImg<float> patch(radius*10, radius*10);
-            // patch.draw_gaussian(patch.width()/2,patch.height()/2,CImg<float>::diagonal(radius, radius),&cutoff);
-            // add_patch(out, patch, x, y);
-            //out.draw_image(0,0,patch);
-
-            draw_halo(out, x, y, cutoff, radius);
+            float coef = 0.1*val/cutoff;
+            draw_halo(out, x, y, cutoff*coef, 0.25f);
         }// x
     }// y
     out.cut(0, cutoff);
@@ -76,11 +71,14 @@ void Gui::draw_text_overlay(CImg<float>& arg){
         return;
     float white = arg.max();
     arg.draw_text(0,0,"%d %d %e", &white, 0, 1, 13, mx, my, (double)image(mx, my));
+    arg.draw_text(0,13,"glare_cutoff = %e", &white, 0, 1, 13, this->glare_cutoff);
 }
 
 void Gui::updateDisplay(){
-    processed = bloom(image,this->bloom_cutoff);
-    display.display(normalize(processed));
+    processed = glare(image,this->glare_cutoff);
+    CImg<float> img4text = +processed;
+    draw_text_overlay(img4text);
+    display.display(normalize(img4text));
 
     CImg<float> img4hist = processed;
     float max = img4hist.max();
@@ -141,7 +139,7 @@ void Gui::work(){
         }// if key
 
         if(display.wheel()){
-            this->bloom_cutoff *= pow(sqrt(2.0f), display.wheel());
+            this->glare_cutoff *= pow(sqrt(2.0f), display.wheel());
             updateDisplay();
             display.set_wheel();
         }
