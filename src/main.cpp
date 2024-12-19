@@ -48,11 +48,11 @@ private:
 
 boost::pool<> StatsNode::pool(sizeof(StatsNode));
 
-float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, StatsNode* stats);
-float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, StatsNode* stats);
+float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, int, StatsNode* stats);
+float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats);
 auto ray_power = ray_power_recursive;
 
-float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, StatsNode* stats){
+float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, int, StatsNode* stats){
 
     // Stats: origin
     stats->put("origin", origin);
@@ -86,15 +86,16 @@ float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3
 
     // Stats: result
     float res = dot(si->normal, -direction) / length(direction);
+    //float res = exp(-length( si->position - origin ));
     stats->put("result", res);
     return res;
 }
 
-size_t n_rays = 5;
+size_t n_rays = 16;
 size_t depth_max = 4;
 
 // TODO light_hint is not very good solution!
-float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, StatsNode* stats){
+float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats){
 
     if(depth==depth_max)
         return 0.0f;
@@ -148,6 +149,14 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     for(size_t i=0; i<n_rays; ++i){
 
         new_direction = mix_ddf->sample();
+        float mix_val = mix_ddf->value(new_direction);
+
+        // if(i<n_rays/2)
+        //     new_direction = si->sdf->sample();
+        // else
+        //     new_direction = light_ddf->sample();
+
+        // float mix_val = 0.5f*si->sdf->value( new_direction ) + 0.5f*light_ddf->value( new_direction );
 
         if( new_direction == vec3() ){
             continue;
@@ -161,12 +170,11 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
         // we need ray_power*sdf/mix_ddf
         // Stats: multiplier
         float sdf_val = sdf_tmp->value(new_direction);
-        float mix_val = mix_ddf->value(new_direction);
         float multiplier = sdf_val/mix_val;
         child_stats->put("multiplier", multiplier);
         assert(isfinite(multiplier));
         // Stats: child ray_power()
-        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1, child_stats);
+        res += multiplier*si->albedo * ray_power(geometry, lighting, si->position, new_direction, depth+1, n_rays/2, child_stats);
     }
 
     // Stats: result
@@ -200,7 +208,7 @@ void render_sample(const Scene& scene, RenderPlane& r_plane, StatsNode* stats){
 
         // ray bouncing recursion
         // with hard-limited depth
-        float value = ray_power(*scene.geometry, *scene.lighting, origin, direction, 0, pixel_stats);
+        float value = ray_power(*scene.geometry, *scene.lighting, origin, direction, 0, n_rays, pixel_stats);
         // TODO investigate why it can be -1e-3
         assert(value > -1e-3);
         value = value >= 0.0f ? value : 0.0f;
