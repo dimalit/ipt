@@ -53,8 +53,8 @@ int main(){
         if(display.button() & 1){
             int mx = display.mouse_x();
             int my = display.mouse_y();
-            for(int dy=-0; dy <= 0; ++dy)
-            for(int dx=-0; dx <= 0; ++dx)
+            for(int dy=-3; dy <= 3; ++dy)
+            for(int dx=-3; dx <= 3; ++dx)
                 image.atXY(mx+dx, my+dy) += 1.0f;
             processed = glare(image, 1);
             update_display();
