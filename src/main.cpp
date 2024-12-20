@@ -140,7 +140,7 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     Ddf* sdf_tmp = si->sdf.get();
 
     unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
-    unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
+    //unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
 
     vec3 new_direction;
     float res = 0.0f;
@@ -148,19 +148,20 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     // Stats: child node
     for(size_t i=0; i<n_rays; ++i){
 
-        new_direction = mix_ddf->sample();
-        float mix_val = mix_ddf->value(new_direction);
+        //new_direction = mix_ddf->sample();
 
-        // if(i<n_rays/2)
-        //     new_direction = si->sdf->sample();
-        // else
-        //     new_direction = light_ddf->sample();
+        if(i<n_rays/2)
+            new_direction = si->sdf->sample();
+        else
+            new_direction = light_ddf->sample();
+
+        if(new_direction == vec3())
+            continue;
 
         // float mix_val = 0.5f*si->sdf->value( new_direction ) + 0.5f*light_ddf->value( new_direction );
 
-        if( new_direction == vec3() ){
-            continue;
-        }
+        float mix_val = 1.0f/length(new_direction);
+        new_direction = normalize(new_direction);
 
         // Stats: false (miss)
         StatsNode* child_stats = new StatsNode();
@@ -269,19 +270,19 @@ int main(int argc, char** argv){
     };
 
     thread t1( thread_func );
-    std::this_thread::sleep_for(chrono::milliseconds(250));
-    thread t2( thread_func );
-    std::this_thread::sleep_for(chrono::milliseconds(250));
-    thread t3( thread_func );
-    std::this_thread::sleep_for(chrono::milliseconds(250));
-    thread t4( thread_func );
+    // std::this_thread::sleep_for(chrono::milliseconds(250));
+    // thread t2( thread_func );
+    // std::this_thread::sleep_for(chrono::milliseconds(250));
+    // thread t3( thread_func );
+    // std::this_thread::sleep_for(chrono::milliseconds(250));
+    // thread t4( thread_func );
 
     gui->work();
 
     termination_requested = true;
-    t4.join();
-    t3.join();
-    t2.join();
+    // t4.join();
+    // t3.join();
+    // t2.join();
     t1.join();
 
     gui->finalize();

@@ -63,7 +63,7 @@ vec3 SphericalDdf::sample() const {
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), u1);
+    return vec3(r*cos(phi), r*sin(phi), u1)/float(0.25/M_PI);
 }
 float SphericalDdf::value( vec3 ) const {
     // TODO assert length = 1?
@@ -78,7 +78,7 @@ vec3 UpperHalfDdf::sample() const {
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), u1);
+    return vec3(r*cos(phi), r*sin(phi), u1)/float(0.5/M_PI);
 }
 float UpperHalfDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -97,7 +97,7 @@ vec3 CosineDdf::sample() const {
     float alpha = acos(cos_alpha);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), cos_alpha);
+    return vec3(r*cos(phi), r*sin(phi), cos_alpha)/float(cos_alpha/M_PI);
 }
 float CosineDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -145,7 +145,7 @@ vec3 UnionDdf::sample() const {
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
-            res = components[i]->sample();
+            res = components[i]->sample()/weights[i];
             break;
         }
     }// for

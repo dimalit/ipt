@@ -14,7 +14,7 @@ struct Ddf {
     // Sample a signle vec3 value. Always succeedes
     virtual glm::vec3 sample() const = 0;
 
-    // Get value in direction of arg. Will return NaN if singular
+    // Get value in direction of arg. For singulars returns 0
     virtual float value( glm::vec3 arg ) const = 0;
 
     //static std::atomic_size_t object_counter;

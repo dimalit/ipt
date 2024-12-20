@@ -55,7 +55,11 @@ glm::vec3 DdfFromLight::sample() const {
     if(cosinus < 1e-5f)               // if facing back
         return vec3();
     Lighting::last_sample = inter;  // HACK TODO how to make it accessible in a cleaner way?
-    return dir;
+
+    float decay = dot(inter.position-origin, inter.position-origin);
+    float value = decay/cosinus/light->area;
+
+    return dir/value;
 }
 
 float DdfFromLight::value( glm::vec3 direction ) const {

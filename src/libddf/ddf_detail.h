@@ -63,8 +63,8 @@ public:
     virtual glm::vec3 sample() const override {
         return glm::vec3(0.0f, 0.0f, 1.0f);
     }
-    virtual float value( glm::vec3 arg ) const override {
-        return std::numeric_limits<float>::quiet_NaN();
+    virtual float value( glm::vec3 ) const override {
+        return 0.0f;
     }
 };
 
