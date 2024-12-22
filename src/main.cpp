@@ -91,8 +91,8 @@ float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3
     return res;
 }
 
-size_t n_rays = 16;
-size_t depth_max = 4;
+size_t n_rays = 8;
+size_t depth_max = 3;
 
 // TODO light_hint is not very good solution!
 float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats){
@@ -248,7 +248,8 @@ int main(int argc, char** argv){
     GridRenderPlane r_plane(640, 640);
 
     //Scene scene = make_scene_lit_corner();
-    Scene scene = make_scene_box();
+    Scene scene = make_scene_square_lit_by_square();
+    //Scene scene = make_scene_box();
     auto gui = make_shared<Gui>(*scene.camera);
     scene.camera = gui;     // replace camera with more interactive one
 

@@ -145,6 +145,7 @@ vec3 UnionDdf::sample() const {
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
+            assert(weights[i]!=0.0f);
             res = components[i]->sample()/weights[i];
             break;
         }
