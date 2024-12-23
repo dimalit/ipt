@@ -21,7 +21,7 @@ private:
     SimpleCamera camera;
     cimg_library::CImg<float> processed;
     void updateDisplay();
-    float glare_cutoff = 1.01f;     // +0.01 to prevent preview render from glowing
+    float glare_cutoff = 1e+9f;     // +0.01 to prevent preview render from glowing
 public:
     Gui(const Camera& _camera);
     void work();

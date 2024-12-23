@@ -22,6 +22,14 @@
 using namespace glm;
 using namespace std;
 
+size_t n_rays = 16;
+size_t depth_max = 4;
+
+class StatsNode;
+float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, int, StatsNode* stats);
+float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats);
+auto ray_power = ray_power_recursive;
+
 // note: root will manage memory for all children
 class StatsNode {
 public:
@@ -47,10 +55,6 @@ private:
 };
 
 boost::pool<> StatsNode::pool(sizeof(StatsNode));
-
-float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, int, StatsNode* stats);
-float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats);
-auto ray_power = ray_power_recursive;
 
 float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t, int, StatsNode* stats){
 
@@ -90,9 +94,6 @@ float ray_power_preview(const Geometry& geometry, const Lighting& lighting, vec3
     stats->put("result", res);
     return res;
 }
-
-size_t n_rays = 16;
-size_t depth_max = 4;
 
 // TODO light_hint is not very good solution!
 float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, vec3 origin, vec3 direction, size_t depth, int n_rays, StatsNode* stats){
@@ -136,10 +137,11 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     //DEBUG for geometry debugging
     //return si->position.y+1.0f;
 
+    unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
+
     // TODO better solution?
     Ddf* sdf_tmp = si->sdf.get();
 
-    unique_ptr<Ddf> light_ddf = lighting.distributionInPoint(si->position);
     unique_ptr<Ddf> mix_ddf = unite(move(light_ddf), 1.0f, move(si->sdf), 1.0f);
 
     vec3 new_direction;
@@ -149,18 +151,12 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     for(size_t i=0; i<n_rays; ++i){
 
         new_direction = mix_ddf->sample();
-        float mix_val = mix_ddf->value(new_direction);
+        float mix_val = 1.0f/length(new_direction);
 
-        // if(i<n_rays/2)
-        //     new_direction = si->sdf->sample();
-        // else
-        //     new_direction = light_ddf->sample();
-
-        // float mix_val = 0.5f*si->sdf->value( new_direction ) + 0.5f*light_ddf->value( new_direction );
-
-        if( new_direction == vec3() ){
+        if(new_direction == vec3())
             continue;
-        }
+
+        new_direction = normalize(new_direction);
 
         // Stats: false (miss)
         StatsNode* child_stats = new StatsNode();
@@ -247,6 +243,7 @@ int main(int argc, char** argv){
     GridRenderPlane r_plane(640, 640);
 
     //Scene scene = make_scene_lit_corner();
+    //Scene scene = make_scene_square_lit_by_square();
     Scene scene = make_scene_box();
     auto gui = make_shared<Gui>(*scene.camera);
     scene.camera = gui;     // replace camera with more interactive one

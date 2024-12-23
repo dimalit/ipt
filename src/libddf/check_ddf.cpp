@@ -46,7 +46,7 @@ void mc_integral_and_max(const Ddf& ddf, float& ddf_integral, float& ddf_max){
 
         vec3 dir = vec3();
         while(dir == vec3())
-            dir = sph.sample();
+            dir = normalize(sph.sample());
 
         float value = ddf.value(dir);
         if(value > ddf_max)
@@ -129,7 +129,7 @@ bool check_ddf(const Ddf& ddf, bool strict_integral, size_t size_alpha, size_t s
     for(size_t i=0; i<N; ++i){
 
         ++total_tries;
-        vec3 vec = ddf.sample();
+        vec3 vec = normalize(ddf.sample());
         if(vec == vec3()){
             --i;
             continue;

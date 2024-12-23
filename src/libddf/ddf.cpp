@@ -63,7 +63,7 @@ vec3 SphericalDdf::sample() const {
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), u1);
+    return vec3(r*cos(phi), r*sin(phi), u1)/float(0.25/M_PI);
 }
 float SphericalDdf::value( vec3 ) const {
     // TODO assert length = 1?
@@ -78,7 +78,7 @@ vec3 UpperHalfDdf::sample() const {
     float alpha = acos(u1);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), u1);
+    return vec3(r*cos(phi), r*sin(phi), u1)/float(0.5/M_PI);
 }
 float UpperHalfDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -97,7 +97,7 @@ vec3 CosineDdf::sample() const {
     float alpha = acos(cos_alpha);
     float phi = 2*M_PI*u2;
     float r = sin(alpha);
-    return vec3(r*cos(phi), r*sin(phi), cos_alpha);
+    return vec3(r*cos(phi), r*sin(phi), cos_alpha)/float(cos_alpha/M_PI);
 }
 float CosineDdf::value( vec3 arg ) const {
     // TODO assert length = 1?
@@ -141,15 +141,39 @@ vec3 UnionDdf::sample() const {
         return vec3();
     float r = randf();
     float acc = 0.0f;
+    size_t winning_i = 0;
     // TODO What's best used here as i?
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
-            res = components[i]->sample();
+            assert(weights[i]!=0.0f);
+            res = components[i]->sample()/weights[i];
+            assert(isfinite(res.x) && isfinite(res.y) && isfinite(res.z));
+            winning_i = i;
             break;
         }
     }// for
     assert(r<acc);
+
+    // Case with 0,0,0 is used e.g. if no lights are accessible from given point
+    // TODO Try to eliminate this
+    if(res == vec3())
+        return res;
+
+    // now adjust value by considering other components' values
+    float value = 0.0f;
+    for(size_t i=0; i<components.size(); ++i){
+        // use generic value() for others
+        if(i!=winning_i)
+            value += weights[i] * components[i]->value(res);
+        // and use actually returned value for winning_i
+        else
+            value += 1.0f/length(res);
+    }// for
+    assert(isfinite(value) && value != 0.0f);
+
+    res = normalize(res) / value;
+
     return res;
 }
 
