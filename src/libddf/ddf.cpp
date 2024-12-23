@@ -141,16 +141,39 @@ vec3 UnionDdf::sample() const {
         return vec3();
     float r = randf();
     float acc = 0.0f;
+    size_t winning_i = 0;
     // TODO What's best used here as i?
     for(size_t i=0; i<components.size(); ++i){
         acc += weights[i];
         if(r<acc){
             assert(weights[i]!=0.0f);
             res = components[i]->sample()/weights[i];
+            assert(isfinite(res.x) && isfinite(res.y) && isfinite(res.z));
+            winning_i = i;
             break;
         }
     }// for
     assert(r<acc);
+
+    // Case with 0,0,0 is used e.g. if no lights are accessible from given point
+    // TODO Try to eliminate this
+    if(res == vec3())
+        return res;
+
+    // now adjust value by considering other components' values
+    float value = 0.0f;
+    for(size_t i=0; i<components.size(); ++i){
+        // use generic value() for others
+        if(i!=winning_i)
+            value += weights[i] * components[i]->value(res);
+        // and use actually returned value for winning_i
+        else
+            value += 1.0f/length(res);
+    }// for
+    assert(isfinite(value) && value != 0.0f);
+
+    res = normalize(res) / value;
+
     return res;
 }
 
