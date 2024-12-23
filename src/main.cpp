@@ -149,18 +149,20 @@ float ray_power_recursive(const Geometry& geometry, const Lighting& lighting, ve
     for(size_t i=0; i<n_rays; ++i){
 
         //new_direction = mix_ddf->sample();
+        float mix_val;
 
-        if(i<n_rays/2)
+        if(i<n_rays/2){
             new_direction = si->sdf->sample();
-        else
+            mix_val = 0.5f/length(new_direction) + 0.5f*light_ddf->value( new_direction );
+        }
+        else{
             new_direction = light_ddf->sample();
+            mix_val = 0.5f/length(new_direction) + 0.5f*si->sdf->value( new_direction );
+        }
 
         if(new_direction == vec3())
             continue;
 
-        // float mix_val = 0.5f*si->sdf->value( new_direction ) + 0.5f*light_ddf->value( new_direction );
-
-        float mix_val = 1.0f/length(new_direction);
         new_direction = normalize(new_direction);
 
         // Stats: false (miss)
@@ -248,8 +250,8 @@ int main(int argc, char** argv){
     GridRenderPlane r_plane(640, 640);
 
     //Scene scene = make_scene_lit_corner();
-    Scene scene = make_scene_square_lit_by_square();
-    //Scene scene = make_scene_box();
+    //Scene scene = make_scene_square_lit_by_square();
+    Scene scene = make_scene_box();
     auto gui = make_shared<Gui>(*scene.camera);
     scene.camera = gui;     // replace camera with more interactive one
 
